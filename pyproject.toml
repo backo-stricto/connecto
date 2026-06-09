@@ -1,7 +1,27 @@
 [project]
 name = "connecto"
 version = "0.1.0"
-description = "Add your description here"
+description = "A database engine to manipulate any type of database from an user defined JSON-like schema."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+GitHub = "https://github.com/backo-stricto/connecto"
+Homepage = "https://github.com/backo-stricto/connecto"
+Issues = "https://github.com/backo-stricto/connecto/issues"
+
+[build-system]
+requires = ["uv_build >= 0.11.23, <0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1",
+    "pyhamcrest>=2.1.0",
+    "pylint>=4.0.5",
+]
