@@ -106,6 +106,32 @@ class DatabaseEngine:
 
         _execute_requests(base_request, attribute_requests, _execute_update)
 
+    def select(self, item_filter=None):
+        """Returns a set of items containing all items matching the specified
+        filter.
+
+        There is no guarantee that all returned items match the filter: the set
+        contains _at least_ items matching it. This means returning all items in
+        the database is valid for any filter.
+
+        The idea behind this is that the DatabaseEngine only interprets filter
+        that can be used to optimize real queries for the database. If the
+        database connection does not support a filter, a generic and external
+        filtering process must be applied on the returned items, but it is not
+        the purpose of the DatabaseEngine.
+
+        :param item_filter: A Stricto SFilter to convert to database requests
+        """
+        base_request, attribute_requests = self.database_item.select_request(
+            item_filter
+        )
+
+        base_response, attribute_responses = _execute_requests(
+            base_request, attribute_requests, _execute_select
+        )
+
+        return self.database_item.load_items(base_response, attribute_responses)
+
 
 def _execute_search(request):
     """Execute the search request using its own connection, that was set by the
@@ -133,6 +159,13 @@ def _execute_update(request):
     encapsulating DatabaseItem.
     """
     return request.connection.execute_update(request)
+
+
+def _execute_select(request):
+    """Execute the select request using its own connection, that was set by the
+    encapsulating DatabaseItem.
+    """
+    return request.connection.execute_select(request)
 
 
 def _execute_list_requests(requests_list, responses, request_method):

@@ -40,3 +40,9 @@ class DatabaseConnection:
         raise NotImplementedError(
             "This DatabaseConnection does not support item update"
         )
+
+    def execute_select(self, request):
+        """Executes the select request and returns the corresponding response."""
+        raise NotImplementedError(
+            "This DatabaseConnection does not support item selection"
+        )

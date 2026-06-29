@@ -8,3 +8,4 @@ from .test_search import TestDatabaseEngineSearch
 from .test_create import TestDatabaseEngineCreate
 from .test_delete import TestDatabaseEngineDelete
 from .test_save import TestDatabaseEngineSave
+from .test_select import TestDatabaseEngineSelect

@@ -202,17 +202,42 @@ class DatabaseItem:
 
         return base_request, model_requests
 
+    def select_request(self, item_filter):
+        """Builds a set of select requests that will be able to return the
+        list of items _at least_ matching the specified filter.
+
+        :param item_value: A Stricto SFilter to convert to database requests
+        """
+
+        # Builds request required by the `item_mapper` to perform the `base`
+        # selection of `DatabaseItem` instances
+        base_request = self.item_mapper.select_request(item_filter)
+        base_request.connection = self.connection
+
+        #  Builds additional requests required to initialize all attributes of
+        #  the `model`. Each attribute is allowed to either modify the
+        #  `base_request`, build new requests or do nothing.
+        model_requests = None
+        if isinstance(self.model, dict):
+            model_requests = {}
+            _request_dict(
+                base_request, model_requests, self.model, _select_request, item_filter
+            )
+        elif isinstance(self.model, (list, tuple)):
+            model_requests = []
+            _request_list(
+                base_request, model_requests, self.model, _select_request, item_filter
+            )
+        else:
+            model_requests = _select_request(self.model, base_request, item_filter)
+
+        return base_request, model_requests
+
     def load(self, base_request_response, attribute_responses):
-        """Loads the item in a JSON-like dict from the database response.
+        """Loads the item in a JSON-like structure from the database response.
 
-        The response as been obtained by the DatabaseEngine from the request provided by
-        search_request().
-
-        The returned value is a JSON-like dict that can be used later to load a
-        backo item using `item.load(loaded_json_dict)`.
-
-        Notice the `_id` is not yet included in the result, as it only includes
-        values retrieved using the `model`.
+        The response has been obtained by the DatabaseEngine from the request
+        provided by search_request().
         """
 
         if isinstance(self.model, list):
@@ -233,6 +258,70 @@ class DatabaseItem:
             # value of the item mapper
             item = self.model.load(base_request_response, attribute_responses)
         return item
+
+    def load_items(self, base_request_response, attribute_responses):
+        """Loads a list of items in a JSON-like list from the database response.
+
+        The response has been obtained by the DatabaseEngine from the request
+        provided by select_request().
+        """
+        if isinstance(self.model, dict):
+            items = self.item_mapper.load_items(lambda: {}, base_request_response)
+        elif isinstance(self.model, (tuple, list)):
+            items = self.item_mapper.load_items(lambda: [], base_request_response)
+        else:
+            items = self.item_mapper.load_items(lambda: None, base_request_response)
+
+        loaded_items = items
+        for i, (_id, item) in enumerate(items):
+            if isinstance(self.model, list):
+                # Loads directly into item, that is referenced in both items and
+                # loaded_items
+                _load_items_list(
+                    self.item_mapper,
+                    _id,
+                    base_request_response,
+                    attribute_responses,
+                    item,
+                    self.model,
+                )
+            elif isinstance(self.model, tuple):
+                # Loads into item
+                _load_items_list(
+                    self.item_mapper,
+                    _id,
+                    base_request_response,
+                    attribute_responses,
+                    item,
+                    self.model,
+                )
+                # Replaces the item with the loaded tuple
+                loaded_items[i] = (_id, tuple(item))
+            elif isinstance(self.model, dict):
+                # Loads directly into item, that is referenced in both items and
+                # loaded_items
+                _load_items_dict(
+                    self.item_mapper,
+                    _id,
+                    base_request_response,
+                    attribute_responses,
+                    item,
+                    self.model,
+                )
+            else:
+                # Replaces the item with the loaded attribute
+                loaded_items[i] = (
+                    _id,
+                    self.model.load(
+                        *_select_responses(
+                            self.item_mapper,
+                            _id,
+                            base_request_response,
+                            attribute_responses,
+                        )
+                    ),
+                )
+        return loaded_items
 
     def created_id(self, base_create_response):
         """Returns the value that should be used as _id from the response of the
@@ -298,6 +387,15 @@ def _update_request(attribute, base_request, _id, value):
     """
     return _requests_with_connection(
         attribute.update_request(base_request, _id, value), attribute.connection
+    )
+
+
+def _select_request(attribute, base_request, item_filter):
+    """Builds select requests as attribute.select_request(base_request,
+    item_filter) and sets connection on all requests.
+    """
+    return _requests_with_connection(
+        attribute.select_request(base_request, item_filter), attribute.connection
     )
 
 
@@ -526,3 +624,165 @@ def _load_dict(base_request_response, attributes_responses, item_dict, attribute
             )
         else:
             item_dict[key] = attribute
+
+
+def _load_items_list(
+    item_mapper,
+    _id,
+    base_request_response,
+    attributes_responses,
+    item_list,
+    attributes_list,
+):
+    j = 0
+    for attribute in attributes_list:
+        if isinstance(attribute, dict):
+            item_value = {}
+            _load_items_dict(
+                item_mapper,
+                _id,
+                base_request_response,
+                attributes_responses[j],
+                item_value,
+                attribute,
+            )
+            item_list.append(item_value)
+            j += 1
+        elif isinstance(attribute, list):
+            item_value = []
+            _load_items_list(
+                item_mapper,
+                _id,
+                base_request_response,
+                attributes_responses[j],
+                item_value,
+                attribute,
+            )
+            item_list.append(item_value)
+            j += 1
+        elif isinstance(attribute, tuple):
+            item_value = []
+            _load_items_list(
+                item_mapper,
+                _id,
+                base_request_response,
+                attributes_responses[j],
+                item_value,
+                attribute,
+            )
+            item_list.append(tuple(item_value))
+            j += 1
+        elif isinstance(attribute, DatabaseAttribute):
+            item_list.append(
+                attribute.load(
+                    *_select_responses(
+                        item_mapper, _id, base_request_response, attributes_responses[j]
+                    )
+                )
+            )
+            j += 1
+        else:
+            item_list.append(attribute)
+
+
+def _load_items_dict(
+    item_mapper,
+    _id,
+    base_request_response,
+    attributes_responses,
+    item_dict,
+    attributes_node,
+):
+    for key, attribute in attributes_node.items():
+        if isinstance(attribute, dict):
+            item_dict[key] = {}
+            _load_items_dict(
+                item_mapper,
+                _id,
+                base_request_response,
+                attributes_responses[key],
+                item_dict[key],
+                attribute,
+            )
+        elif isinstance(attribute, list):
+            item_dict[key] = []
+            _load_items_list(
+                item_mapper,
+                _id,
+                base_request_response,
+                attributes_responses[key],
+                item_dict[key],
+                attribute,
+            )
+        elif isinstance(attribute, tuple):
+            item_value = []
+            _load_items_list(
+                item_mapper,
+                _id,
+                base_request_response,
+                attributes_responses[key],
+                item_value,
+                attribute,
+            )
+            item_dict[key] = tuple(item_value)
+        elif isinstance(attribute, DatabaseAttribute):
+            item_dict[key] = attributes_node[key].load(
+                *_select_responses(
+                    item_mapper, _id, base_request_response, attributes_responses[key]
+                )
+            )
+        else:
+            item_dict[key] = attribute
+
+
+def _select_responses_list(item_mapper, _id, base_request_response, response):
+    select_responses = []
+    base_select_response = None
+    for value in response:
+        if isinstance(value, dict):
+            base_select_response, select_response = _select_responses_dict(
+                item_mapper, _id, base_request_response, value
+            )
+            select_responses.append(select_response)
+        elif isinstance(value, list):
+            base_select_response, select_response = _select_responses_list(
+                item_mapper, _id, base_request_response, value
+            )
+            select_responses.append(select_response)
+        else:
+            base_select_response, select_response = item_mapper.select_response(
+                _id, base_request_response, value
+            )
+            select_responses.append(select_response)
+    return base_select_response, select_responses
+
+
+def _select_responses_dict(item_mapper, _id, base_request_response, response):
+    select_responses = {}
+    base_select_response = None
+    for key, value in response.items():
+        if isinstance(value, dict):
+            base_select_response, select_response = _select_responses_dict(
+                item_mapper, _id, base_request_response, value
+            )
+            select_responses[key] = select_response
+        elif isinstance(value, list):
+            base_select_response, select_response = _select_responses_list(
+                item_mapper, _id, base_request_response, value
+            )
+            select_responses[key] = select_response
+        else:
+            base_select_response, select_response = item_mapper.select_response(
+                _id, base_request_response, value
+            )
+
+            select_responses[key] = select_response
+    return base_select_response, select_responses
+
+
+def _select_responses(item_mapper, _id, base_request_response, response):
+    if isinstance(response, dict):
+        return _select_responses_dict(item_mapper, _id, base_request_response, response)
+    if isinstance(response, list):
+        return _select_responses_list(item_mapper, _id, base_request_response, response)
+    return item_mapper.select_response(_id, base_request_response, response)

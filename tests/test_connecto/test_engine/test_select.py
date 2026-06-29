@@ -1,6 +1,6 @@
-"""Test module for DatabaseEngine search operation."""
+"""Test module for DatabaseEngine select operation."""
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from hamcrest import (
     assert_that,
@@ -8,54 +8,54 @@ from hamcrest import (
     has_properties,
     has_entries,
     contains_inanyorder,
-    calling,
-    raises,
     equal_to,
 )
 
+from stricto import SFilter
+
 from connecto.engine import DatabaseEngine
-from connecto.error import ItemNotFound
 
 from .operation_test_case import OperationTestCase, mock_execute_request
 
 
 @patch("connecto.item.DatabaseItem", autospec=True)
-class TestDatabaseEngineSearch(OperationTestCase):
-    """Tests the search operation of the DatabaseEngine."""
+class TestDatabaseEngineSelect(OperationTestCase):
+    """Tests the select operation of the DatabaseEngine."""
 
     def setUp(self):
         super().setUp()
-        self.default_connection.execute_search.side_effect = mock_execute_request
-        self.custom_connection.execute_search.side_effect = mock_execute_request
+        self.default_connection.execute_select.side_effect = mock_execute_request
+        self.custom_connection.execute_select.side_effect = mock_execute_request
 
-    def test_search_single_attribute(self, database_item):
-        """Tests method DatabaseEngine.search for an existing item with a single
-        item as attribute search request.
+    def test_select_single_attribute(self, database_item):
+        """Tests method DatabaseEngine.select for an existing item with a single
+        item as attribute select request.
         """
         engine = DatabaseEngine(self.default_connection, database_item.return_value)
 
-        database_item.return_value.search_request.return_value = (
+        database_item.return_value.select_request.return_value = (
             self.mock_requests[0],
             self.mock_requests[4],
         )
 
+        item_filter = MagicMock(spec=SFilter)
         # Real call to the method under test
-        _id, item = engine.search("mock_id")
+        items = engine.select(item_filter)
 
         assert_that(
-            database_item.return_value.search_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+            database_item.return_value.select_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(item_filter))),
         )
 
-        # Ensure search was called with appropriate parameters.
+        # Ensure select was called with appropriate parameters.
         assert_that(
-            self.default_connection.execute_search.call_args_list,
+            self.default_connection.execute_select.call_args_list,
             contains_inanyorder(
                 has_properties(args=contains_exactly(self.mock_requests[0]))
             ),
         )
         assert_that(
-            self.custom_connection.execute_search.call_args_list,
+            self.custom_connection.execute_select.call_args_list,
             contains_exactly(
                 has_properties(args=contains_exactly(self.mock_requests[4]))
             ),
@@ -63,7 +63,7 @@ class TestDatabaseEngineSearch(OperationTestCase):
 
         # pylint: disable=R0801
         assert_that(
-            database_item.return_value.load.call_args_list,
+            database_item.return_value.load_items.call_args_list,
             contains_exactly(
                 has_properties(
                     args=contains_exactly(
@@ -75,31 +75,31 @@ class TestDatabaseEngineSearch(OperationTestCase):
         )
         # pylint: enable=R0801
 
-        assert_that(_id, equal_to("mock_id"))
-        assert_that(item, equal_to(database_item.return_value.load.return_value))
+        assert_that(items, equal_to(database_item.return_value.load_items.return_value))
 
-    def test_search_list(self, database_item):
-        """Tests method DatabaseEngine.search for an existing item with a list
-        of attribute search requests.
+    def test_select_list(self, database_item):
+        """Tests method DatabaseEngine.select for an existing item with a list
+        of attribute select requests.
         """
         engine = DatabaseEngine(self.default_connection, database_item.return_value)
 
-        database_item.return_value.search_request.return_value = (
+        database_item.return_value.select_request.return_value = (
             self.mock_requests[0],
             self.mock_requests[1:],
         )
 
+        item_filter = MagicMock(spec=SFilter)
         # Real call to the method under test
-        _id, item = engine.search("mock_id")
+        items = engine.select(item_filter)
 
         assert_that(
-            database_item.return_value.search_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+            database_item.return_value.select_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(item_filter))),
         )
 
-        # Ensure search was called with appropriate parameters.
+        # Ensure select was called with appropriate parameters.
         assert_that(
-            self.default_connection.execute_search.call_args_list,
+            self.default_connection.execute_select.call_args_list,
             contains_inanyorder(
                 *[
                     has_properties(args=contains_exactly(mock_request))
@@ -108,7 +108,7 @@ class TestDatabaseEngineSearch(OperationTestCase):
             ),
         )
         assert_that(
-            self.custom_connection.execute_search.call_args_list,
+            self.custom_connection.execute_select.call_args_list,
             contains_inanyorder(
                 *[
                     has_properties(args=contains_exactly(mock_request))
@@ -119,7 +119,7 @@ class TestDatabaseEngineSearch(OperationTestCase):
 
         # pylint: disable=R0801
         assert_that(
-            database_item.return_value.load.call_args_list,
+            database_item.return_value.load_items.call_args_list,
             contains_exactly(
                 has_properties(
                     args=contains_exactly(
@@ -131,18 +131,17 @@ class TestDatabaseEngineSearch(OperationTestCase):
         )
         # pylint: enable=R0801
 
-        assert_that(_id, equal_to("mock_id"))
-        assert_that(item, equal_to(database_item.return_value.load.return_value))
+        assert_that(items, equal_to(database_item.return_value.load_items.return_value))
 
-    def test_search_dict(self, database_item):
-        """Tests method DatabaseEngine.search for an existing item with a
-        dictionnary of nested structures as attribute search requests.
+    def test_select_dict(self, database_item):
+        """Tests method DatabaseEngine.select for an existing item with a
+        dictionnary of nested structures as attribute select requests.
         """
 
         engine = DatabaseEngine(self.default_connection, database_item.return_value)
 
         # pylint: disable=R0801
-        database_item.return_value.search_request.return_value = (
+        database_item.return_value.select_request.return_value = (
             self.mock_requests[0],
             {
                 "mock": self.mock_requests[1],
@@ -157,17 +156,18 @@ class TestDatabaseEngineSearch(OperationTestCase):
         )
         # pylint: enable=R0801
 
+        item_filter = MagicMock(spec=SFilter)
         # Real call to the method under test
-        _id, item = engine.search("mock_id")
+        items = engine.select(item_filter)
 
         assert_that(
-            database_item.return_value.search_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+            database_item.return_value.select_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(item_filter))),
         )
 
-        # Ensure search was called with appropriate parameters.
+        # Ensure select was called with appropriate parameters.
         assert_that(
-            self.default_connection.execute_search.call_args_list,
+            self.default_connection.execute_select.call_args_list,
             contains_inanyorder(
                 *[
                     has_properties(args=contains_exactly(mock_request))
@@ -176,7 +176,7 @@ class TestDatabaseEngineSearch(OperationTestCase):
             ),
         )
         assert_that(
-            self.custom_connection.execute_search.call_args_list,
+            self.custom_connection.execute_select.call_args_list,
             contains_inanyorder(
                 *[
                     has_properties(args=contains_exactly(mock_request))
@@ -187,7 +187,7 @@ class TestDatabaseEngineSearch(OperationTestCase):
 
         # pylint: disable=R0801
         assert_that(
-            database_item.return_value.load.call_args_list,
+            database_item.return_value.load_items.call_args_list,
             contains_exactly(
                 has_properties(
                     args=contains_exactly(
@@ -216,24 +216,4 @@ class TestDatabaseEngineSearch(OperationTestCase):
         )
         # pylint: enable=R0801
 
-        assert_that(_id, equal_to("mock_id"))
-        assert_that(item, equal_to(database_item.return_value.load.return_value))
-
-    def test_search_not_found(self, database_item):
-        """Tests DatabaseEngine.search method for an non existing item.
-
-        Must raise a ItemNotFound.
-        """
-
-        engine = DatabaseEngine(self.default_connection, database_item.return_value)
-
-        database_item.return_value.search_request.return_value = (
-            self.mock_requests[0],
-            {},
-        )
-        self.default_connection.execute_search.side_effect = ItemNotFound(
-            "mock_id", "mocked database"
-        )
-
-        # Real call to the method under test
-        assert_that(calling(engine.search).with_args("mock_id"), raises(ItemNotFound))
+        assert_that(items, equal_to(database_item.return_value.load_items.return_value))
