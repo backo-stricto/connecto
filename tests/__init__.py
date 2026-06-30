@@ -1,19 +1,5 @@
 """
-all imports
+Imports all tests
 """
 
-from .test_utils import (
-    TestNestedDataPathFind,
-    TestNestedDataPathUpdate,
-    TestNestedDataPathDelete,
-)
-from .test_database import (
-    TestDatabaseEngine,
-    TestDatabaseItem,
-    TestDatabaseItemSearch,
-    TestDatabaseItemCreate,
-    TestDatabaseItemUpdate,
-    TestDatabaseItemDelete,
-    TestDatabaseItemSelect,
-    TestDatabaseItemLoad,
-)
+from .test_connecto import *

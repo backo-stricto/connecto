@@ -1,6 +1,6 @@
 """All database item tests.
 
-They can be run with unittest tests.test_database.test_item
+They can be run with unittest tests.test_connecto.test_item
 """
 
 from .test_base import TestDatabaseItem

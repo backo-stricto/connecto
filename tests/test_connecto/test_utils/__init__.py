@@ -1,6 +1,6 @@
 """All tests for utilities.
 
-They can be run with unittest tests.test_utils
+They can be run with unittest tests.test_connecto.test_utils
 """
 
 from .test_nested_data_path import (

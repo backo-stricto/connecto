@@ -9,9 +9,9 @@ from hamcrest import (
     has_properties,
 )
 
-from backo.database.item import DatabaseItem
-from backo.database.attribute import DatabaseAttribute
-from backo.database.mapper import ItemMapper
+from connecto.item import DatabaseItem
+from connecto.attribute import DatabaseAttribute
+from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItem(unittest.TestCase):
@@ -56,7 +56,7 @@ class TestDatabaseItem(unittest.TestCase):
                 contains_exactly(has_properties(args=contains_exactly(path))),
             )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_set_default_connection(self, connection):
         """Tests the set_default_connection methods sets the default connection
         of all attributes of the model.
