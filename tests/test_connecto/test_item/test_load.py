@@ -11,9 +11,9 @@ from hamcrest import (
     equal_to,
 )
 
-from backo.database.item import DatabaseItem
-from backo.database.attribute import DatabaseAttribute
-from backo.database.mapper import ItemMapper
+from connecto.item import DatabaseItem
+from connecto.attribute import DatabaseAttribute
+from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItemLoad(unittest.TestCase):

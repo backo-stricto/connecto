@@ -10,15 +10,15 @@ from hamcrest import (
     has_properties,
 )
 
-from backo.database.item import DatabaseItem
-from backo.database.attribute import DatabaseAttribute
-from backo.database.mapper import ItemMapper
+from connecto.item import DatabaseItem
+from connecto.attribute import DatabaseAttribute
+from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItemCreate(unittest.TestCase):
     """Tests create requests building depending on the complexity of the model."""
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_request_single_attribute_model(self, connection):
         """Tests the validity of built create requests for a single attribute model."""
         base_request = MagicMock(connection=None)
@@ -70,7 +70,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
             ),
         )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_request_with_none_request(self, connection):
         """Tests the validity of built create requests for a single attribute
         model that return no request."""
@@ -118,7 +118,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
             contains_exactly(item_mapper.create_request.return_value, None),
         )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_request_simple_list_model(self, connection):
         """Tests the validity of built create requests for a list model."""
         base_request = MagicMock(connection=None)
@@ -190,7 +190,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
             ),
         )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_request_simple_dict_model(self, connection):
         """Tests the validity of built create requests for a dict model."""
         base_request = MagicMock(connection=None)
@@ -274,7 +274,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
             ),
         )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_with_missing_dict_value(self, connection):
         """Tests the validity of built create requests for a dict model."""
         base_request = MagicMock(connection=None)
@@ -362,7 +362,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
             ),
         )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_request_with_complex_nested_attributes(self, connection):
         """Tests the validity of built create requests for a model with
         attributes nested in dicts and lists.
@@ -488,7 +488,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
             ),
         )
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_multiple_request_attribute(self, connection):
         """Tests the validity of built create requests for a model with
         attributes that require multiple requests nested in dicts and lists.

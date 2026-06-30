@@ -1,5 +1,5 @@
 """
-Test module for backo.database.attribute.py
+Test module for connecto.attribute.py
 """
 
 import unittest
@@ -11,13 +11,13 @@ from hamcrest import (
 )
 
 
-from backo.database.attribute import DatabaseAttribute
+from connecto.attribute import DatabaseAttribute
 
 
 class TestDatabaseAttribute(unittest.TestCase):
     """Tests DatabaseAttribute"""
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_set_default_connection(self, connection):
         """Tests the default connection is set if no custom connection was
         provided to the DatabaseAttribute.
@@ -28,7 +28,7 @@ class TestDatabaseAttribute(unittest.TestCase):
 
         assert_that(attribute, has_properties(connection=connection))
 
-    @patch("backo.database.connection.DatabaseConnection", autospec=True)
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_set_default_connection_with_custom_connection(self, connection):
         """Tests the default connection is ignored is a custom connection was
         provided to the DatabaseAttribute.

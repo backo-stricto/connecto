@@ -1,5 +1,5 @@
 """
-Test module for backo.database.engine.py
+Test module for connecto.engine.py
 """
 
 import unittest
@@ -17,13 +17,13 @@ from hamcrest import (
     equal_to,
 )
 
-from backo.database.engine import DatabaseEngine
-from backo.database.connection import DatabaseConnection
-from backo.error import NotFoundError
+from connecto.engine import DatabaseEngine
+from connecto.connection import DatabaseConnection
+from connecto.error import ItemNotFound
 
 
-@patch("backo.database.item.DatabaseItem", autospec=True)
-@patch("backo.database.connection.DatabaseConnection", autospec=True)
+@patch("connecto.item.DatabaseItem", autospec=True)
+@patch("connecto.connection.DatabaseConnection", autospec=True)
 class TestDatabaseEngine(unittest.TestCase):
     """
     Test LdapConnector features
@@ -173,12 +173,12 @@ class TestDatabaseEngine(unittest.TestCase):
             MagicMock(connection=connection.return_value),
             {},
         )
-        connection.return_value.execute_search.side_effect = NotFoundError(
-            "item not found"
+        connection.return_value.execute_search.side_effect = ItemNotFound(
+            "mock_id", "mocked database"
         )
 
         # Real call to the method under test
-        assert_that(calling(engine.search).with_args("mock_id"), raises(NotFoundError))
+        assert_that(calling(engine.search).with_args("mock_id"), raises(ItemNotFound))
 
     def test_create(self, connection, database_item):
         """Tests LdapSearchEngine.create method."""

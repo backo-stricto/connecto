@@ -11,7 +11,7 @@ from hamcrest import (
     contains_exactly,
 )
 
-from backo.utils.nested_data_path import find, update, delete, PathError
+from connecto.utils.nested_data_path import find, update, delete, PathError
 
 
 class TestNestedDataPathFind(unittest.TestCase):
