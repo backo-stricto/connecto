@@ -15,6 +15,8 @@ from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItem(unittest.TestCase):
+    # pylint: disable=R0801
+
     """Tests basics features of the DatabaseItem."""
 
     def test_init_database_item(self):
@@ -31,11 +33,11 @@ class TestDatabaseItem(unittest.TestCase):
             {
                 "name": attribute_mocks[0],
                 "nested": {
-                    "data": [
+                    "data": (
                         [attribute_mocks[1], attribute_mocks[2]],
                         attribute_mocks[3],
                         {"nested_data": attribute_mocks[4]},
-                    ],
+                    ),
                     "time": attribute_mocks[5],
                 },
             },
@@ -72,11 +74,11 @@ class TestDatabaseItem(unittest.TestCase):
             {
                 "name": attribute_mocks[0],
                 "nested": {
-                    "data": [
+                    "data": (
                         [attribute_mocks[1], attribute_mocks[2]],
                         attribute_mocks[3],
                         {"nested_data": attribute_mocks[4]},
-                    ],
+                    ),
                     "time": attribute_mocks[5],
                 },
             },

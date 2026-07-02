@@ -16,6 +16,8 @@ from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItemDelete(unittest.TestCase):
+    # pylint: disable=R0801
+
     """Tests delete requests building depending on the complexity of the model."""
 
     @patch("connecto.connection.DatabaseConnection", autospec=True)
@@ -115,8 +117,66 @@ class TestDatabaseItemDelete(unittest.TestCase):
         )
 
     @patch("connecto.connection.DatabaseConnection", autospec=True)
+    def test_delete_request_simple_tuple_model(self, connection):
+        """Tests the validity of built delete requests for a tuple model."""
+        base_request = MagicMock(connection=None)
+        item_mapper = MagicMock(spec=ItemMapper)
+        item_mapper.delete_request.return_value = base_request
+
+        attribute_requests = tuple(MagicMock(connection=None) for _ in range(3))
+        attribute_mocks = tuple(
+            MagicMock(
+                spec=DatabaseAttribute,
+                request=attribute_requests[i],
+                connection=connection,
+            )
+            for i in range(3)
+        )
+        for i in range(3):
+            attribute_mocks[i].delete_request.return_value = attribute_requests[i]
+
+        database_item = DatabaseItem(
+            item_mapper,
+            attribute_mocks,
+        )
+        # Connection used for the base request
+        database_item.connection = connection
+
+        delete_requests = database_item.delete_request("mock_id")
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(base_request, has_properties(connection=connection))
+        for request in attribute_requests:
+            assert_that(request, has_properties(connection=connection))
+
+        assert_that(
+            item_mapper.delete_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+        )
+        for attribute in attribute_mocks:
+            assert_that(
+                attribute.delete_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            item_mapper.delete_request.return_value, "mock_id"
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            delete_requests,
+            contains_exactly(
+                item_mapper.delete_request.return_value,
+                contains_exactly(*attribute_requests),
+            ),
+        )
+
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_delete_request_simple_list_model(self, connection):
-        """Tests the validity of built delete requests for a dict model."""
+        """Tests the validity of built delete requests for a list model."""
         base_request = MagicMock(connection=None)
         item_mapper = MagicMock(spec=ItemMapper)
         item_mapper.delete_request.return_value = base_request
@@ -243,7 +303,7 @@ class TestDatabaseItemDelete(unittest.TestCase):
     @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_delete_request_with_complex_nested_attributes(self, connection):
         """Tests the validity of built delete requests for a model with
-        attributes nested in dicts and lists.
+        attributes nested in dicts, lists and tuples.
         """
         base_request = MagicMock(connection=None)
         item_mapper = MagicMock(spec=ItemMapper)
@@ -266,11 +326,11 @@ class TestDatabaseItemDelete(unittest.TestCase):
             {
                 "name": attribute_mocks[0],
                 "nested": {
-                    "data": [
+                    "data": (
                         [attribute_mocks[1], attribute_mocks[2]],
                         attribute_mocks[3],
                         {"nested_data": attribute_mocks[4]},
-                    ],
+                    ),
                     "time": attribute_mocks[5],
                 },
             },
@@ -309,14 +369,16 @@ class TestDatabaseItemDelete(unittest.TestCase):
                 has_entries(
                     {
                         "name": attribute_requests[0],
-                        "nested": {
-                            "data": [
-                                [attribute_requests[1], attribute_requests[2]],
-                                attribute_requests[3],
-                                {"nested_data": attribute_requests[4]},
-                            ],
-                            "time": attribute_requests[5],
-                        },
+                        "nested": has_entries(
+                            {
+                                "data": contains_exactly(
+                                    [attribute_requests[1], attribute_requests[2]],
+                                    attribute_requests[3],
+                                    {"nested_data": attribute_requests[4]},
+                                ),
+                                "time": attribute_requests[5],
+                            }
+                        ),
                     }
                 ),
             ),

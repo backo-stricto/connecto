@@ -16,6 +16,8 @@ from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItemCreate(unittest.TestCase):
+    # pylint: disable=R0801
+
     """Tests create requests building depending on the complexity of the model."""
 
     @patch("connecto.connection.DatabaseConnection", autospec=True)
@@ -116,6 +118,78 @@ class TestDatabaseItemCreate(unittest.TestCase):
         assert_that(
             create_requests,
             contains_exactly(item_mapper.create_request.return_value, None),
+        )
+
+    @patch("connecto.connection.DatabaseConnection", autospec=True)
+    def test_create_request_simple_tuple_model(self, connection):
+        """Tests the validity of built create requests for a tuple model."""
+        base_request = MagicMock(connection=None)
+        item_mapper = MagicMock(spec=ItemMapper)
+        item_mapper.create_request.return_value = base_request
+
+        attribute_requests = tuple(MagicMock(connection=None) for _ in range(3))
+        attribute_mocks = tuple(
+            MagicMock(
+                spec=DatabaseAttribute,
+                request=attribute_requests[i],
+                connection=connection,
+            )
+            for i in range(3)
+        )
+        for i in range(3):
+            attribute_mocks[i].create_request.return_value = attribute_requests[i]
+
+        database_item = DatabaseItem(
+            item_mapper,
+            attribute_mocks,
+        )
+        # Connection used for the base request
+        database_item.connection = connection
+
+        create_requests = database_item.create_request(
+            ["new_login", "new_name", "new_contact"]
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(base_request, has_properties(connection=connection))
+        for request in attribute_requests:
+            assert_that(request, has_properties(connection=connection))
+
+        assert_that(
+            item_mapper.create_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        contains_exactly(
+                            "new_login",
+                            "new_name",
+                            "new_contact",
+                        )
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            attribute_mocks, ["new_login", "new_name", "new_contact"]
+        ):
+            assert_that(
+                attribute.create_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            item_mapper.create_request.return_value, value
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            create_requests,
+            contains_exactly(
+                item_mapper.create_request.return_value,
+                contains_exactly(*attribute_requests),
+            ),
         )
 
     @patch("connecto.connection.DatabaseConnection", autospec=True)
@@ -365,7 +439,7 @@ class TestDatabaseItemCreate(unittest.TestCase):
     @patch("connecto.connection.DatabaseConnection", autospec=True)
     def test_create_request_with_complex_nested_attributes(self, connection):
         """Tests the validity of built create requests for a model with
-        attributes nested in dicts and lists.
+        attributes nested in dicts, lists and tuples.
         """
         base_request = MagicMock(connection=None)
         item_mapper = MagicMock(spec=ItemMapper)
@@ -388,11 +462,11 @@ class TestDatabaseItemCreate(unittest.TestCase):
             {
                 "name": attribute_mocks[0],
                 "nested": {
-                    "data": [
+                    "data": (
                         [attribute_mocks[1], attribute_mocks[2]],
                         attribute_mocks[3],
                         {"nested_data": attribute_mocks[4]},
-                    ],
+                    ),
                     "time": attribute_mocks[5],
                 },
             },
@@ -404,11 +478,11 @@ class TestDatabaseItemCreate(unittest.TestCase):
             {
                 "name": "new_name",
                 "nested": {
-                    "data": [
+                    "data": (
                         [13, 12],
                         "data_1",
                         {"nested_data": "new_nested_value"},
-                    ],
+                    ),
                     "time": "new_time",
                 },
             }
@@ -475,14 +549,16 @@ class TestDatabaseItemCreate(unittest.TestCase):
                 has_entries(
                     {
                         "name": attribute_requests[0],
-                        "nested": {
-                            "data": [
-                                [attribute_requests[1], attribute_requests[2]],
-                                attribute_requests[3],
-                                {"nested_data": attribute_requests[4]},
-                            ],
-                            "time": attribute_requests[5],
-                        },
+                        "nested": has_entries(
+                            {
+                                "data": contains_exactly(
+                                    [attribute_requests[1], attribute_requests[2]],
+                                    attribute_requests[3],
+                                    {"nested_data": attribute_requests[4]},
+                                ),
+                                "time": attribute_requests[5],
+                            }
+                        ),
                     }
                 ),
             ),

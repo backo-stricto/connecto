@@ -17,6 +17,8 @@ from connecto.mapper import ItemMapper
 
 
 class TestDatabaseItemLoad(unittest.TestCase):
+    # pylint: disable=R0801
+
     """Tests item loading depending on the complexity of the model."""
 
     def test_load_single_attribute_model(self):
@@ -50,6 +52,49 @@ class TestDatabaseItemLoad(unittest.TestCase):
         assert_that(
             item,
             equal_to("John Doe"),
+        )
+
+    def test_load_simple_tuple_model(self):
+        """Tests database item loading for a tuple model."""
+
+        root_response = MagicMock()
+        mock_item_mapper = MagicMock(spec=ItemMapper)
+        mock_item_mapper.load.return_value = []
+
+        attribute_responses = tuple(MagicMock() for _ in range(3))
+        attribute_mocks = tuple(
+                MagicMock(spec=DatabaseAttribute, response=attribute_responses[i])
+                for i in range(3)
+        )
+        database_item = DatabaseItem(mock_item_mapper, attribute_mocks)
+
+        attribute_mocks[0].load.return_value = "jdoe"
+        attribute_mocks[1].load.return_value = "John Doe"
+        attribute_mocks[2].load.return_value = ["mail1@example.org", "mail2@jdoe.fr"]
+
+        # Real call to the method under test
+        item = database_item.load(root_response, attribute_responses)
+
+        assert_that(
+            mock_item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(root_response))),
+        )
+
+        for attribute, response in zip(attribute_mocks, attribute_responses):
+            assert_that(
+                attribute.load.call_args_list,
+                contains_exactly(
+                    has_properties(args=contains_exactly(root_response, response))
+                ),
+            )
+
+        assert_that(
+            item,
+            contains_exactly(
+                "jdoe",
+                "John Doe",
+                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+            ),
         )
 
     def test_load_simple_list_model(self):
@@ -156,7 +201,7 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
     def test_load_item_with_complex_nested_attributes(self):
         """Tests database item loading for a model with attributes nested in
-        dicts and lists.
+        dicts, lists and tuples.
         """
 
         root_response = MagicMock()
@@ -173,11 +218,11 @@ class TestDatabaseItemLoad(unittest.TestCase):
             {
                 "name": attribute_mocks[0],
                 "nested": {
-                    "data": [
+                    "data": (
                         [attribute_mocks[1], attribute_mocks[2]],
                         attribute_mocks[3],
                         {"nested_data": attribute_mocks[4]},
-                    ],
+                    ),
                     "time": attribute_mocks[5],
                 },
             },
@@ -196,11 +241,11 @@ class TestDatabaseItemLoad(unittest.TestCase):
             {
                 "name": attribute_responses[0],
                 "nested": {
-                    "data": [
+                    "data": (
                         [attribute_responses[1], attribute_responses[2]],
                         attribute_responses[3],
                         {"nested_data": attribute_responses[4]},
-                    ],
+                    ),
                     "time": attribute_responses[5],
                 },
             },
