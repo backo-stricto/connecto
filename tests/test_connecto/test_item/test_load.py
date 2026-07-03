@@ -21,31 +21,38 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
     """Tests item loading depending on the complexity of the model."""
 
+    def setUp(self):
+        self.base_response = MagicMock()
+        self.item_mapper = MagicMock(spec=ItemMapper)
+
+        self.attribute_responses = [MagicMock() for _ in range(6)]
+        self.attribute_mocks = [
+            MagicMock(spec=DatabaseAttribute, response=self.attribute_responses[i])
+            for i in range(6)
+        ]
+
     def test_load_single_attribute_model(self):
         """Tests database item loading for a single attribute model."""
+        database_item = DatabaseItem(self.item_mapper, self.attribute_mocks[0])
 
-        root_response = MagicMock()
-        mock_item_mapper = MagicMock(spec=ItemMapper)
-        mock_item_mapper.load.return_value = None
-
-        attribute_response = MagicMock()
-        attribute_mock = MagicMock(spec=DatabaseAttribute, response=attribute_response)
-        database_item = DatabaseItem(mock_item_mapper, attribute_mock)
-
-        attribute_mock.load.return_value = "John Doe"
+        self.attribute_mocks[0].load.return_value = "John Doe"
 
         # Real call to the method under test
-        item = database_item.load(root_response, attribute_response)
+        item = database_item.load(self.base_response, self.attribute_responses[0])
 
         assert_that(
-            mock_item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(root_response))),
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
         )
 
         assert_that(
-            attribute_mock.load.call_args_list,
+            self.attribute_mocks[0].load.call_args_list,
             contains_exactly(
-                has_properties(args=contains_exactly(root_response, attribute_response))
+                has_properties(
+                    args=contains_exactly(
+                        self.base_response, self.attribute_responses[0]
+                    )
+                )
             ),
         )
 
@@ -56,35 +63,31 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
     def test_load_simple_tuple_model(self):
         """Tests database item loading for a tuple model."""
+        database_item = DatabaseItem(self.item_mapper, tuple(self.attribute_mocks[:3]))
 
-        root_response = MagicMock()
-        mock_item_mapper = MagicMock(spec=ItemMapper)
-        mock_item_mapper.load.return_value = []
-
-        attribute_responses = tuple(MagicMock() for _ in range(3))
-        attribute_mocks = tuple(
-                MagicMock(spec=DatabaseAttribute, response=attribute_responses[i])
-                for i in range(3)
-        )
-        database_item = DatabaseItem(mock_item_mapper, attribute_mocks)
-
-        attribute_mocks[0].load.return_value = "jdoe"
-        attribute_mocks[1].load.return_value = "John Doe"
-        attribute_mocks[2].load.return_value = ["mail1@example.org", "mail2@jdoe.fr"]
+        self.item_mapper.load.return_value = []
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = "John Doe"
+        self.attribute_mocks[2].load.return_value = [
+            "mail1@example.org",
+            "mail2@jdoe.fr",
+        ]
 
         # Real call to the method under test
-        item = database_item.load(root_response, attribute_responses)
+        item = database_item.load(self.base_response, self.attribute_responses[:3])
 
         assert_that(
-            mock_item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(root_response))),
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
         )
 
-        for attribute, response in zip(attribute_mocks, attribute_responses):
+        for attribute, response in zip(
+            self.attribute_mocks[:3], self.attribute_responses[:3]
+        ):
             assert_that(
                 attribute.load.call_args_list,
                 contains_exactly(
-                    has_properties(args=contains_exactly(root_response, response))
+                    has_properties(args=contains_exactly(self.base_response, response))
                 ),
             )
 
@@ -99,35 +102,31 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
     def test_load_simple_list_model(self):
         """Tests database item loading for a list model."""
+        database_item = DatabaseItem(self.item_mapper, self.attribute_mocks[:3])
 
-        root_response = MagicMock()
-        mock_item_mapper = MagicMock(spec=ItemMapper)
-        mock_item_mapper.load.return_value = []
-
-        attribute_responses = [MagicMock() for _ in range(3)]
-        attribute_mocks = [
-            MagicMock(spec=DatabaseAttribute, response=attribute_responses[i])
-            for i in range(3)
+        self.item_mapper.load.return_value = []
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = "John Doe"
+        self.attribute_mocks[2].load.return_value = [
+            "mail1@example.org",
+            "mail2@jdoe.fr",
         ]
-        database_item = DatabaseItem(mock_item_mapper, attribute_mocks)
-
-        attribute_mocks[0].load.return_value = "jdoe"
-        attribute_mocks[1].load.return_value = "John Doe"
-        attribute_mocks[2].load.return_value = ["mail1@example.org", "mail2@jdoe.fr"]
 
         # Real call to the method under test
-        item = database_item.load(root_response, attribute_responses)
+        item = database_item.load(self.base_response, self.attribute_responses[:3])
 
         assert_that(
-            mock_item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(root_response))),
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
         )
 
-        for attribute, response in zip(attribute_mocks, attribute_responses):
+        for attribute, response in zip(
+            self.attribute_mocks[:3], self.attribute_responses[:3]
+        ):
             assert_that(
                 attribute.load.call_args_list,
                 contains_exactly(
-                    has_properties(args=contains_exactly(root_response, response))
+                    has_properties(args=contains_exactly(self.base_response, response))
                 ),
             )
 
@@ -142,49 +141,45 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
     def test_load_simple_dict_model(self):
         """Tests database item loading for a dict model."""
-
-        root_response = MagicMock()
-        mock_item_mapper = MagicMock(spec=ItemMapper)
-        mock_item_mapper.load.return_value = {}
-
-        attribute_responses = [MagicMock() for _ in range(3)]
-        attribute_mocks = [
-            MagicMock(spec=DatabaseAttribute, response=attribute_responses[i])
-            for i in range(3)
-        ]
         database_item = DatabaseItem(
-            mock_item_mapper,
+            self.item_mapper,
             {
-                "login": attribute_mocks[0],
-                "name": attribute_mocks[1],
-                "contact": attribute_mocks[2],
+                "login": self.attribute_mocks[0],
+                "name": self.attribute_mocks[1],
+                "contact": self.attribute_mocks[2],
             },
         )
 
-        attribute_mocks[0].load.return_value = "jdoe"
-        attribute_mocks[1].load.return_value = "John Doe"
-        attribute_mocks[2].load.return_value = ["mail1@example.org", "mail2@jdoe.fr"]
+        self.item_mapper.load.return_value = {}
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = "John Doe"
+        self.attribute_mocks[2].load.return_value = [
+            "mail1@example.org",
+            "mail2@jdoe.fr",
+        ]
 
         # Real call to the method under test
         item = database_item.load(
-            root_response,
+            self.base_response,
             {
-                "login": attribute_responses[0],
-                "name": attribute_responses[1],
-                "contact": attribute_responses[2],
+                "login": self.attribute_responses[0],
+                "name": self.attribute_responses[1],
+                "contact": self.attribute_responses[2],
             },
         )
 
         assert_that(
-            mock_item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(root_response))),
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
         )
 
-        for attribute, response in zip(attribute_mocks, attribute_responses):
+        for attribute, response in zip(
+            self.attribute_mocks[:3], self.attribute_responses[:3]
+        ):
             assert_that(
                 attribute.load.call_args_list,
                 contains_exactly(
-                    has_properties(args=contains_exactly(root_response, response))
+                    has_properties(args=contains_exactly(self.base_response, response))
                 ),
             )
 
@@ -203,64 +198,55 @@ class TestDatabaseItemLoad(unittest.TestCase):
         """Tests database item loading for a model with attributes nested in
         dicts, lists and tuples.
         """
-
-        root_response = MagicMock()
-        mock_item_mapper = MagicMock(spec=ItemMapper)
-        mock_item_mapper.load.return_value = {}
-
-        attribute_responses = [MagicMock() for _ in range(6)]
-        attribute_mocks = [
-            MagicMock(spec=DatabaseAttribute, response=attribute_responses[i])
-            for i in range(6)
-        ]
         database_item = DatabaseItem(
-            mock_item_mapper,
+            self.item_mapper,
             {
-                "name": attribute_mocks[0],
+                "name": self.attribute_mocks[0],
                 "nested": {
                     "data": (
-                        [attribute_mocks[1], attribute_mocks[2]],
-                        attribute_mocks[3],
-                        {"nested_data": attribute_mocks[4]},
+                        [self.attribute_mocks[1], self.attribute_mocks[2]],
+                        self.attribute_mocks[3],
+                        {"nested_data": self.attribute_mocks[4]},
                     ),
-                    "time": attribute_mocks[5],
+                    "time": self.attribute_mocks[5],
                 },
             },
         )
 
-        attribute_mocks[0].load.return_value = "jdoe"
-        attribute_mocks[1].load.return_value = 13
-        attribute_mocks[2].load.return_value = 12
-        attribute_mocks[3].load.return_value = "some_value"
-        attribute_mocks[4].load.return_value = "nested_data_value"
-        attribute_mocks[5].load.return_value = "now"
+        self.item_mapper.load.return_value = {}
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = 13
+        self.attribute_mocks[2].load.return_value = 12
+        self.attribute_mocks[3].load.return_value = "some_value"
+        self.attribute_mocks[4].load.return_value = "nested_data_value"
+        self.attribute_mocks[5].load.return_value = "now"
 
         # Real call to the method under test
         item = database_item.load(
-            root_response,
+            self.base_response,
             {
-                "name": attribute_responses[0],
+                "name": self.attribute_responses[0],
                 "nested": {
                     "data": (
-                        [attribute_responses[1], attribute_responses[2]],
-                        attribute_responses[3],
-                        {"nested_data": attribute_responses[4]},
+                        [self.attribute_responses[1], self.attribute_responses[2]],
+                        self.attribute_responses[3],
+                        {"nested_data": self.attribute_responses[4]},
                     ),
-                    "time": attribute_responses[5],
+                    "time": self.attribute_responses[5],
                 },
             },
         )
 
         assert_that(
-            mock_item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(root_response))),
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
         )
 
-        for attribute, response in zip(attribute_mocks, attribute_responses):
+        for attribute, response in zip(self.attribute_mocks, self.attribute_responses):
             assert_that(
                 attribute.load.call_args_list,
                 contains_exactly(
-                    has_properties(args=contains_exactly(root_response, response))
+                    has_properties(args=contains_exactly(self.base_response, response))
                 ),
             )
 
@@ -287,37 +273,30 @@ class TestDatabaseItemLoad(unittest.TestCase):
         """Tests database item loading for  a model with
         attributes that require multiple requests nested in dicts and lists.
         """
-
-        base_response = MagicMock()
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.load.return_value = {}
-
-        attribute_responses = [MagicMock() for _ in range(5)]
-        attribute_mocks = [
-            MagicMock(spec=DatabaseAttribute, request=attribute_responses[i])
-            for i in range(2)
-        ]
-
         database_item = DatabaseItem(
-            item_mapper,
-            {"foo": attribute_mocks[0], "nested": {"bar": attribute_mocks[1]}},
+            self.item_mapper,
+            {
+                "foo": self.attribute_mocks[0],
+                "nested": {"bar": self.attribute_mocks[1]},
+            },
         )
-        attribute_mocks[0].load.return_value = "foo_value"
-        attribute_mocks[1].load.return_value = ["bar_value_1", "bar_value_2"]
+        self.item_mapper.load.return_value = {}
+        self.attribute_mocks[0].load.return_value = "foo_value"
+        self.attribute_mocks[1].load.return_value = ["bar_value_1", "bar_value_2"]
 
         item = database_item.load(
-            base_response,
+            self.base_response,
             {
                 "foo": {
-                    "request1": attribute_responses[0],
-                    "request2": attribute_responses[1],
+                    "request1": self.attribute_responses[0],
+                    "request2": self.attribute_responses[1],
                 },
                 "nested": {
                     "bar": [
-                        attribute_responses[2],
+                        self.attribute_responses[2],
                         {
-                            "req1": attribute_responses[3],
-                            "req2": attribute_responses[4],
+                            "req1": self.attribute_responses[3],
+                            "req2": self.attribute_responses[4],
                         },
                     ]
                 },
@@ -325,23 +304,26 @@ class TestDatabaseItemLoad(unittest.TestCase):
         )
 
         assert_that(
-            item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(base_response))),
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
         )
 
         for attribute, response in zip(
-            attribute_mocks,
+            self.attribute_mocks[:2],
             [
                 has_entries(
                     {
-                        "request1": attribute_responses[0],
-                        "request2": attribute_responses[1],
+                        "request1": self.attribute_responses[0],
+                        "request2": self.attribute_responses[1],
                     }
                 ),
                 contains_exactly(
-                    attribute_responses[2],
+                    self.attribute_responses[2],
                     has_entries(
-                        {"req1": attribute_responses[3], "req2": attribute_responses[4]}
+                        {
+                            "req1": self.attribute_responses[3],
+                            "req2": self.attribute_responses[4],
+                        }
                     ),
                 ),
             ],
@@ -349,7 +331,7 @@ class TestDatabaseItemLoad(unittest.TestCase):
             assert_that(
                 attribute.load.call_args_list,
                 contains_exactly(
-                    has_properties(args=contains_exactly(base_response, response))
+                    has_properties(args=contains_exactly(self.base_response, response))
                 ),
             )
 

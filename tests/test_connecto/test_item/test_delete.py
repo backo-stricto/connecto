@@ -1,7 +1,7 @@
 """DatabaseItem delete operation tests"""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from hamcrest import (
     assert_that,
@@ -13,50 +13,59 @@ from hamcrest import (
 from connecto.item import DatabaseItem
 from connecto.attribute import DatabaseAttribute
 from connecto.mapper import ItemMapper
+from connecto.connection import DatabaseConnection
 
 
 class TestDatabaseItemDelete(unittest.TestCase):
     # pylint: disable=R0801
-
     """Tests delete requests building depending on the complexity of the model."""
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_request_single_attribute_model(self, connection):
+    def setUp(self):
+        self.connection = MagicMock(spec=DatabaseConnection)
+        self.base_request = MagicMock(connection=None)
+        self.item_mapper = MagicMock(spec=ItemMapper)
+        self.item_mapper.delete_request.return_value = self.base_request
+
+        self.attribute_requests = [MagicMock() for _ in range(6)]
+        self.attribute_mocks = [
+            MagicMock(
+                spec=DatabaseAttribute,
+                request=self.attribute_requests[i],
+                connection=self.connection,
+            )
+            for i in range(6)
+        ]
+        for i in range(6):
+            self.attribute_mocks[i].delete_request.return_value = (
+                self.attribute_requests[i]
+            )
+
+    def test_delete_request_single_attribute_model(self):
         """Tests the validity of built delete requests for a single attribute
         model that return no request."""
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
-
-        attribute_request = MagicMock(connection=None)
-        attribute_mock = MagicMock(
-            spec=DatabaseAttribute,
-            request=attribute_request,
-            connection=connection,
-        )
-        attribute_mock.delete_request.return_value = attribute_request
-
-        database_item = DatabaseItem(item_mapper, attribute_mock)
+        database_item = DatabaseItem(self.item_mapper, self.attribute_mocks[0])
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
-        assert_that(attribute_request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        assert_that(
+            self.attribute_requests[0], has_properties(connection=self.connection)
+        )
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
         assert_that(
-            attribute_mock.delete_request.call_args_list,
+            self.attribute_mocks[0].delete_request.call_args_list,
             contains_exactly(
                 has_properties(
                     args=contains_exactly(
-                        item_mapper.delete_request.return_value, "mock_id"
+                        self.item_mapper.delete_request.return_value, "mock_id"
                     )
                 )
             ),
@@ -65,44 +74,35 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
-                attribute_request,
+                self.item_mapper.delete_request.return_value,
+                self.attribute_requests[0],
             ),
         )
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_request_with_none_request(self, connection):
+    def test_delete_request_with_none_request(self):
         """Tests the validity of built delete requests for a single attribute model."""
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
+        self.attribute_mocks[0].delete_request.return_value = None
 
-        attribute_mock = MagicMock(
-            spec=DatabaseAttribute,
-            connection=connection,
-        )
-        attribute_mock.delete_request.return_value = None
-
-        database_item = DatabaseItem(item_mapper, attribute_mock)
+        database_item = DatabaseItem(self.item_mapper, self.attribute_mocks[0])
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
         assert_that(
-            attribute_mock.delete_request.call_args_list,
+            self.attribute_mocks[0].delete_request.call_args_list,
             contains_exactly(
                 has_properties(
                     args=contains_exactly(
-                        item_mapper.delete_request.return_value, "mock_id"
+                        self.item_mapper.delete_request.return_value, "mock_id"
                     )
                 )
             ),
@@ -111,56 +111,39 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
+                self.item_mapper.delete_request.return_value,
                 None,
             ),
         )
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_request_simple_tuple_model(self, connection):
+    def test_delete_request_simple_tuple_model(self):
         """Tests the validity of built delete requests for a tuple model."""
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
-
-        attribute_requests = tuple(MagicMock(connection=None) for _ in range(3))
-        attribute_mocks = tuple(
-            MagicMock(
-                spec=DatabaseAttribute,
-                request=attribute_requests[i],
-                connection=connection,
-            )
-            for i in range(3)
-        )
-        for i in range(3):
-            attribute_mocks[i].delete_request.return_value = attribute_requests[i]
-
         database_item = DatabaseItem(
-            item_mapper,
-            attribute_mocks,
+            self.item_mapper,
+            tuple(self.attribute_mocks),
         )
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
-        for request in attribute_requests:
-            assert_that(request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests:
+            assert_that(request, has_properties(connection=self.connection))
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
-        for attribute in attribute_mocks:
+        for attribute in self.attribute_mocks:
             assert_that(
                 attribute.delete_request.call_args_list,
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            item_mapper.delete_request.return_value, "mock_id"
+                            self.item_mapper.delete_request.return_value, "mock_id"
                         )
                     )
                 ),
@@ -169,56 +152,39 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
-                contains_exactly(*attribute_requests),
+                self.item_mapper.delete_request.return_value,
+                contains_exactly(*self.attribute_requests),
             ),
         )
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_request_simple_list_model(self, connection):
+    def test_delete_request_simple_list_model(self):
         """Tests the validity of built delete requests for a list model."""
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
-
-        attribute_requests = [MagicMock(connection=None) for _ in range(3)]
-        attribute_mocks = [
-            MagicMock(
-                spec=DatabaseAttribute,
-                request=attribute_requests[i],
-                connection=connection,
-            )
-            for i in range(3)
-        ]
-        for i in range(3):
-            attribute_mocks[i].delete_request.return_value = attribute_requests[i]
-
         database_item = DatabaseItem(
-            item_mapper,
-            attribute_mocks,
+            self.item_mapper,
+            self.attribute_mocks,
         )
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
-        for request in attribute_requests:
-            assert_that(request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests:
+            assert_that(request, has_properties(connection=self.connection))
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
-        for attribute in attribute_mocks:
+        for attribute in self.attribute_mocks:
             assert_that(
                 attribute.delete_request.call_args_list,
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            item_mapper.delete_request.return_value, "mock_id"
+                            self.item_mapper.delete_request.return_value, "mock_id"
                         )
                     )
                 ),
@@ -227,60 +193,43 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
-                contains_exactly(*attribute_requests),
+                self.item_mapper.delete_request.return_value,
+                contains_exactly(*self.attribute_requests),
             ),
         )
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_request_simple_dict_model(self, connection):
+    def test_delete_request_simple_dict_model(self):
         """Tests the validity of built delete requests for a dict model."""
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
-
-        attribute_requests = [MagicMock(connection=None) for _ in range(3)]
-        attribute_mocks = [
-            MagicMock(
-                spec=DatabaseAttribute,
-                request=attribute_requests[i],
-                connection=connection,
-            )
-            for i in range(3)
-        ]
-        for i in range(3):
-            attribute_mocks[i].delete_request.return_value = attribute_requests[i]
-
         database_item = DatabaseItem(
-            item_mapper,
+            self.item_mapper,
             {
-                "login": attribute_mocks[0],
-                "name": attribute_mocks[1],
-                "contact": attribute_mocks[2],
+                "login": self.attribute_mocks[0],
+                "name": self.attribute_mocks[1],
+                "contact": self.attribute_mocks[2],
             },
         )
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
-        for request in attribute_requests:
-            assert_that(request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:3]:
+            assert_that(request, has_properties(connection=self.connection))
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
-        for attribute in attribute_mocks:
+        for attribute in self.attribute_mocks[:3]:
             assert_that(
                 attribute.delete_request.call_args_list,
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            item_mapper.delete_request.return_value, "mock_id"
+                            self.item_mapper.delete_request.return_value, "mock_id"
                         )
                     )
                 ),
@@ -289,74 +238,57 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
+                self.item_mapper.delete_request.return_value,
                 has_entries(
                     {
-                        "login": attribute_requests[0],
-                        "name": attribute_requests[1],
-                        "contact": attribute_requests[2],
+                        "login": self.attribute_requests[0],
+                        "name": self.attribute_requests[1],
+                        "contact": self.attribute_requests[2],
                     }
                 ),
             ),
         )
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_request_with_complex_nested_attributes(self, connection):
+    def test_delete_request_with_complex_nested_attributes(self):
         """Tests the validity of built delete requests for a model with
         attributes nested in dicts, lists and tuples.
         """
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
-
-        attribute_requests = [MagicMock() for _ in range(6)]
-        attribute_mocks = [
-            MagicMock(
-                spec=DatabaseAttribute,
-                request=attribute_requests[i],
-                connection=connection,
-            )
-            for i in range(6)
-        ]
-        for i in range(6):
-            attribute_mocks[i].delete_request.return_value = attribute_requests[i]
-
         database_item = DatabaseItem(
-            item_mapper,
+            self.item_mapper,
             {
-                "name": attribute_mocks[0],
+                "name": self.attribute_mocks[0],
                 "nested": {
                     "data": (
-                        [attribute_mocks[1], attribute_mocks[2]],
-                        attribute_mocks[3],
-                        {"nested_data": attribute_mocks[4]},
+                        [self.attribute_mocks[1], self.attribute_mocks[2]],
+                        self.attribute_mocks[3],
+                        {"nested_data": self.attribute_mocks[4]},
                     ),
-                    "time": attribute_mocks[5],
+                    "time": self.attribute_mocks[5],
                 },
             },
         )
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
-        for request in attribute_requests:
-            assert_that(request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests:
+            assert_that(request, has_properties(connection=self.connection))
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
-        for attribute in attribute_mocks:
+        for attribute in self.attribute_mocks:
             assert_that(
                 attribute.delete_request.call_args_list,
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            item_mapper.delete_request.return_value, "mock_id"
+                            self.item_mapper.delete_request.return_value, "mock_id"
                         )
                     )
                 ),
@@ -365,18 +297,21 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
+                self.item_mapper.delete_request.return_value,
                 has_entries(
                     {
-                        "name": attribute_requests[0],
+                        "name": self.attribute_requests[0],
                         "nested": has_entries(
                             {
                                 "data": contains_exactly(
-                                    [attribute_requests[1], attribute_requests[2]],
-                                    attribute_requests[3],
-                                    {"nested_data": attribute_requests[4]},
+                                    [
+                                        self.attribute_requests[1],
+                                        self.attribute_requests[2],
+                                    ],
+                                    self.attribute_requests[3],
+                                    {"nested_data": self.attribute_requests[4]},
                                 ),
-                                "time": attribute_requests[5],
+                                "time": self.attribute_requests[5],
                             }
                         ),
                     }
@@ -384,59 +319,50 @@ class TestDatabaseItemDelete(unittest.TestCase):
             ),
         )
 
-    @patch("connecto.connection.DatabaseConnection", autospec=True)
-    def test_delete_multiple_request_attribute(self, connection):
+    def test_delete_multiple_request_attribute(self):
         """Tests the validity of built delete requests for a model with
         attributes that require multiple requests nested in dicts and lists.
         """
-        base_request = MagicMock(connection=None)
-        item_mapper = MagicMock(spec=ItemMapper)
-        item_mapper.delete_request.return_value = base_request
 
-        attribute_requests = [MagicMock() for _ in range(5)]
-        attribute_mocks = [
-            MagicMock(
-                spec=DatabaseAttribute,
-                request=attribute_requests[i],
-                connection=connection,
-            )
-            for i in range(2)
-        ]
-        attribute_mocks[0].delete_request.return_value = {
-            "request1": attribute_requests[0],
-            "request2": attribute_requests[1],
+        # Overrides setUp defaults
+        self.attribute_mocks[0].delete_request.return_value = {
+            "request1": self.attribute_requests[0],
+            "request2": self.attribute_requests[1],
         }
-        attribute_mocks[1].delete_request.return_value = [
-            attribute_requests[2],
-            {"req1": attribute_requests[3], "req2": attribute_requests[4]},
+        self.attribute_mocks[1].delete_request.return_value = [
+            self.attribute_requests[2],
+            {"req1": self.attribute_requests[3], "req2": self.attribute_requests[4]},
         ]
 
         database_item = DatabaseItem(
-            item_mapper,
-            {"foo": attribute_mocks[0], "nested": {"bar": attribute_mocks[1]}},
+            self.item_mapper,
+            {
+                "foo": self.attribute_mocks[0],
+                "nested": {"bar": self.attribute_mocks[1]},
+            },
         )
         # Connection used for the base request
-        database_item.connection = connection
+        database_item.connection = self.connection
 
         delete_requests = database_item.delete_request("mock_id")
 
         # As a side effect, the connection must have been set up on all requests
         # returned in search_requests
-        assert_that(base_request, has_properties(connection=connection))
-        for request in attribute_requests:
-            assert_that(request, has_properties(connection=connection))
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:5]:
+            assert_that(request, has_properties(connection=self.connection))
 
         assert_that(
-            item_mapper.delete_request.call_args_list,
+            self.item_mapper.delete_request.call_args_list,
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
-        for attribute in attribute_mocks:
+        for attribute in self.attribute_mocks[:2]:
             assert_that(
                 attribute.delete_request.call_args_list,
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            item_mapper.delete_request.return_value, "mock_id"
+                            self.item_mapper.delete_request.return_value, "mock_id"
                         )
                     )
                 ),
@@ -445,23 +371,23 @@ class TestDatabaseItemDelete(unittest.TestCase):
         assert_that(
             delete_requests,
             contains_exactly(
-                item_mapper.delete_request.return_value,
+                self.item_mapper.delete_request.return_value,
                 has_entries(
                     {
                         "foo": has_entries(
                             {
-                                "request1": attribute_requests[0],
-                                "request2": attribute_requests[1],
+                                "request1": self.attribute_requests[0],
+                                "request2": self.attribute_requests[1],
                             }
                         ),
                         "nested": has_entries(
                             {
                                 "bar": contains_exactly(
-                                    attribute_requests[2],
+                                    self.attribute_requests[2],
                                     has_entries(
                                         {
-                                            "req1": attribute_requests[3],
-                                            "req2": attribute_requests[4],
+                                            "req1": self.attribute_requests[3],
+                                            "req2": self.attribute_requests[4],
                                         }
                                     ),
                                 )
