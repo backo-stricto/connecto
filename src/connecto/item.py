@@ -1,6 +1,7 @@
 """Implementation of the DatabaseItem"""
 
 from .mapper import ItemMapper
+from .attribute import DatabaseAttribute
 
 
 class DatabaseItem:
@@ -332,7 +333,7 @@ def _set_attribute_paths(attributes, current_path):
     elif isinstance(attributes, dict):
         for key, attribute in attributes.items():
             _set_attribute_paths(attribute, current_path + [key])
-    else:
+    elif isinstance(attributes, DatabaseAttribute):
         attributes.set_attribute_path(current_path)
 
 
@@ -344,7 +345,7 @@ def _set_model_connection(attributes, connection):
     elif isinstance(attributes, dict):
         for attribute in attributes.values():
             _set_model_connection(attribute, connection)
-    else:
+    elif isinstance(attributes, DatabaseAttribute):
         attributes.set_default_connection(connection)
 
 
@@ -364,7 +365,7 @@ def _request_list(base_request, request_list, attributes_list, request_method, *
             requests = {}
             _request_dict(base_request, requests, attribute, request_method, *args)
             request_list.append(requests)
-        else:
+        elif isinstance(attribute, DatabaseAttribute):
             request_list.append(request_method(attribute, base_request, *args))
 
 
@@ -384,7 +385,7 @@ def _request_dict(base_request, request_dict, attributes_dict, request_method, *
             requests = {}
             _request_dict(base_request, requests, attribute, request_method, *args)
             request_dict[key] = requests
-        else:
+        elif isinstance(attribute, DatabaseAttribute):
             request_dict[key] = request_method(attribute, base_request, *args)
 
 
@@ -411,7 +412,7 @@ def _request_list_with_values(
                 base_request, requests, attribute, value, request_method, *args
             )
             request_list.append(requests)
-        else:
+        elif isinstance(attribute, DatabaseAttribute):
             request_list.append(request_method(attribute, base_request, *args, value))
 
 
@@ -449,7 +450,7 @@ def _request_dict_with_values(
                 *args,
             )
             request_dict[key] = requests
-        else:
+        elif isinstance(attribute, DatabaseAttribute):
             request_dict[key] = request_method(
                 attribute, base_request, *args, values.get(key)
             )
@@ -463,37 +464,48 @@ def _load_list(base_request_response, attributes_responses, item_list, attribute
     i is loaded as attribute.load(base_request_response, response) where
     attribute=attributes_list[i] and response=attributes_responses[i].
     """
-    for attribute, response in zip(attributes_list, attributes_responses):
+    j = 0
+    for attribute in attributes_list:
         if isinstance(attribute, dict):
             item_value = {}
             _load_dict(
                 base_request_response,
-                response,
+                attributes_responses[j],
                 item_value,
                 attribute,
             )
             item_list.append(item_value)
+            j += 1
         elif isinstance(attribute, list):
             item_value = []
             _load_list(
                 base_request_response,
-                response,
+                attributes_responses[j],
                 item_value,
                 attribute,
             )
             item_list.append(item_value)
+            j += 1
         elif isinstance(attribute, tuple):
             item_value = []
             _load_list(
                 base_request_response,
-                response,
+                attributes_responses[j],
                 item_value,
                 attribute,
             )
             item_list.append(tuple(item_value))
-
+            j += 1
+        elif isinstance(attribute, DatabaseAttribute):
+            item_list.append(
+                attribute.load(base_request_response, attributes_responses[j])
+            )
+            j += 1
         else:
-            item_list.append(attribute.load(base_request_response, response))
+            # Constant
+            item_list.append(attribute)
+            # Do not increment response index because no response is included
+            # for constants
 
 
 def _load_dict(base_request_response, attributes_responses, item_dict, attributes_node):
@@ -530,7 +542,9 @@ def _load_dict(base_request_response, attributes_responses, item_dict, attribute
                 attribute,
             )
             item_dict[key] = tuple(tuple_values)
-        else:
-            item_dict[key] = attributes_node[key].load(
+        elif isinstance(attribute, DatabaseAttribute):
+            item_dict[key] = attribute.load(
                 base_request_response, attributes_responses[key]
             )
+        else:
+            item_dict[key] = attribute

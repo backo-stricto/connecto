@@ -346,3 +346,211 @@ class TestDatabaseItemLoad(unittest.TestCase):
                 },
             ),
         )
+
+    def test_load_simple_tuple_model_with_constants(self):
+        """Tests database item loading for a tuple model with constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            (self.attribute_mocks[0], "John Doe", self.attribute_mocks[1]),
+        )
+
+        self.item_mapper.load.return_value = []
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = [
+            "mail1@example.org",
+            "mail2@jdoe.fr",
+        ]
+
+        # Real call to the method under test
+        item = database_item.load(self.base_response, self.attribute_responses[:2])
+
+        assert_that(
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+        )
+
+        for attribute, response in zip(
+            self.attribute_mocks[:2], self.attribute_responses[:2]
+        ):
+            assert_that(
+                attribute.load.call_args_list,
+                contains_exactly(
+                    has_properties(args=contains_exactly(self.base_response, response))
+                ),
+            )
+
+        assert_that(
+            item,
+            contains_exactly(
+                "jdoe",
+                "John Doe",
+                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+            ),
+        )
+
+    def test_load_simple_list_model_with_constants(self):
+        """Tests database item loading for a list model with constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            [self.attribute_mocks[0], "John Doe", self.attribute_mocks[1]],
+        )
+
+        self.item_mapper.load.return_value = []
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = [
+            "mail1@example.org",
+            "mail2@jdoe.fr",
+        ]
+
+        # Real call to the method under test
+        item = database_item.load(self.base_response, self.attribute_responses[:2])
+
+        assert_that(
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+        )
+
+        for attribute, response in zip(
+            self.attribute_mocks[:2], self.attribute_responses[:2]
+        ):
+            assert_that(
+                attribute.load.call_args_list,
+                contains_exactly(
+                    has_properties(args=contains_exactly(self.base_response, response))
+                ),
+            )
+
+        assert_that(
+            item,
+            contains_exactly(
+                "jdoe",
+                "John Doe",
+                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+            ),
+        )
+
+    def test_load_simple_dict_model_with_constants(self):
+        """Tests database item loading for a dict model with constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "login": self.attribute_mocks[0],
+                "name": "John Doe",
+                "contact": self.attribute_mocks[1],
+            },
+        )
+
+        self.item_mapper.load.return_value = {}
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = [
+            "mail1@example.org",
+            "mail2@jdoe.fr",
+        ]
+
+        # Real call to the method under test
+        item = database_item.load(
+            self.base_response,
+            {
+                "login": self.attribute_responses[0],
+                "contact": self.attribute_responses[1],
+            },
+        )
+
+        assert_that(
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+        )
+
+        for attribute, response in zip(
+            self.attribute_mocks[:2], self.attribute_responses[:2]
+        ):
+            assert_that(
+                attribute.load.call_args_list,
+                contains_exactly(
+                    has_properties(args=contains_exactly(self.base_response, response))
+                ),
+            )
+
+        assert_that(
+            item,
+            has_entries(
+                {
+                    "login": "jdoe",
+                    "name": "John Doe",
+                    "contact": contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+                }
+            ),
+        )
+
+    def test_load_item_with_complex_nested_attributes_and_constants(self):
+        """Tests database item loading for a model with attributes and constants nested in
+        dicts, lists and tuples.
+        """
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "name": self.attribute_mocks[0],
+                "nested": {
+                    "data": (
+                        [self.attribute_mocks[1], self.attribute_mocks[2]],
+                        "constant",
+                        {"nested_data": self.attribute_mocks[3]},
+                    ),
+                    "time": "now",
+                },
+            },
+        )
+
+        self.item_mapper.load.return_value = {}
+        self.attribute_mocks[0].load.return_value = "jdoe"
+        self.attribute_mocks[1].load.return_value = 13
+        self.attribute_mocks[2].load.return_value = 12
+        self.attribute_mocks[3].load.return_value = "nested_data_value"
+
+        # Real call to the method under test
+        item = database_item.load(
+            self.base_response,
+            {
+                "name": self.attribute_responses[0],
+                "nested": {
+                    "data": [
+                        [self.attribute_responses[1], self.attribute_responses[2]],
+                        {"nested_data": self.attribute_responses[3]},
+                    ],
+                },
+            },
+        )
+
+        assert_that(
+            self.item_mapper.load.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+        )
+
+        for attribute, response in zip(
+            self.attribute_mocks[:4], self.attribute_responses[:4]
+        ):
+            assert_that(
+                attribute.load.call_args_list,
+                contains_exactly(
+                    has_properties(args=contains_exactly(self.base_response, response))
+                ),
+            )
+
+        assert_that(
+            item,
+            has_entries(
+                {
+                    "name": "jdoe",
+                    "nested": has_entries(
+                        {
+                            "data": contains_exactly(
+                                contains_exactly(13, 12),
+                                "constant",
+                                has_entries({"nested_data": "nested_data_value"}),
+                            ),
+                            "time": "now",
+                        }
+                    ),
+                }
+            ),
+        )

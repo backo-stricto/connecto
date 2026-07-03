@@ -579,3 +579,360 @@ class TestDatabaseItemCreate(unittest.TestCase):
                 ),
             ),
         )
+
+    def test_create_request_simple_tuple_model_with_constants(self):
+        """Tests the validity of built create requests for a tuple model with
+        constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            model=(self.attribute_mocks[0], "constant", self.attribute_mocks[1]),
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        create_requests = database_item.create_request(
+            ("new_login", "constant", "new_contact")
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.create_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        contains_exactly(
+                            "new_login",
+                            "constant",
+                            "new_contact",
+                        )
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:2], ["new_login", "new_contact"]
+        ):
+            assert_that(
+                attribute.create_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.create_request.return_value, value
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            create_requests,
+            contains_exactly(
+                self.item_mapper.create_request.return_value,
+                contains_exactly(*self.attribute_requests[:2]),
+            ),
+        )
+
+    def test_create_request_simple_list_model_with_constants(self):
+        """Tests the validity of built create requests for a list model with
+        constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            [self.attribute_mocks[0], "constant", self.attribute_mocks[1]],
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        create_requests = database_item.create_request(
+            ["new_login", "constant", "new_contact"]
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.create_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        contains_exactly(
+                            "new_login",
+                            "constant",
+                            "new_contact",
+                        )
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:2], ["new_login", "new_contact"]
+        ):
+            assert_that(
+                attribute.create_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.create_request.return_value, value
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            create_requests,
+            contains_exactly(
+                self.item_mapper.create_request.return_value,
+                contains_exactly(*self.attribute_requests[:2]),
+            ),
+        )
+
+    def test_create_request_simple_dict_model_with_constants(self):
+        """Tests the validity of built create requests for a dict model with
+        constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "login": self.attribute_mocks[0],
+                "name": "mock_name",
+                "contact": self.attribute_mocks[1],
+            },
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        create_requests = database_item.create_request(
+            {"login": "new_login", "name": "mock_name", "contact": "new_contact"}
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.create_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        has_entries(
+                            {
+                                "login": "new_login",
+                                "name": "mock_name",
+                                "contact": "new_contact",
+                            }
+                        )
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:2], ["new_login", "new_contact"]
+        ):
+            assert_that(
+                attribute.create_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.create_request.return_value, value
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            create_requests,
+            contains_exactly(
+                self.item_mapper.create_request.return_value,
+                has_entries(
+                    {
+                        "login": self.attribute_requests[0],
+                        "contact": self.attribute_requests[1],
+                    }
+                ),
+            ),
+        )
+
+    def test_create_with_missing_dict_constant(self):
+        """Tests the validity of built create requests for a dict model with
+        missing constants in user input."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "login": self.attribute_mocks[0],
+                "name": self.attribute_mocks[1],
+                "contact": "constant",
+            },
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        create_requests = database_item.create_request(
+            # Missing value for contact
+            {"login": "new_login", "name": "new_name"}
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.create_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        has_entries(
+                            {
+                                "login": "new_login",
+                                "name": "new_name",
+                            }
+                        )
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:2],
+            ["new_login", "new_name"],
+        ):
+            assert_that(
+                attribute.create_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.create_request.return_value, value
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            create_requests,
+            contains_exactly(
+                self.item_mapper.create_request.return_value,
+                has_entries(
+                    {
+                        "login": self.attribute_requests[0],
+                        "name": self.attribute_requests[1],
+                    }
+                ),
+            ),
+        )
+
+    def test_create_request_with_complex_nested_attributes_and_constants(self):
+        """Tests the validity of built create requests for a model with
+        attributes and constants nested in dicts, lists and tuples.
+        """
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "name": self.attribute_mocks[0],
+                "nested": {
+                    "data": (
+                        [self.attribute_mocks[1], self.attribute_mocks[2]],
+                        "constant",
+                        {"nested_data": self.attribute_mocks[3]},
+                    ),
+                    "time": "now",
+                },
+            },
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        create_requests = database_item.create_request(
+            {
+                "name": "new_name",
+                "nested": {
+                    "data": (
+                        [13, 12],
+                        "constant",
+                        {"nested_data": "new_nested_value"},
+                    ),
+                    "time": "now",
+                },
+            }
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:4]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.create_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        has_entries(
+                            {
+                                "name": "new_name",
+                                "nested": has_entries(
+                                    {
+                                        "data": contains_exactly(
+                                            contains_exactly(13, 12),
+                                            "constant",
+                                            has_entries(
+                                                {"nested_data": "new_nested_value"}
+                                            ),
+                                        ),
+                                        "time": "now",
+                                    }
+                                ),
+                            }
+                        )
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:4],
+            [
+                "new_name",
+                13,
+                12,
+                "new_nested_value",
+            ],
+        ):
+            assert_that(
+                attribute.create_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.create_request.return_value, value
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            create_requests,
+            contains_exactly(
+                self.item_mapper.create_request.return_value,
+                has_entries(
+                    {
+                        "name": self.attribute_requests[0],
+                        "nested": has_entries(
+                            {
+                                "data": contains_exactly(
+                                    [
+                                        self.attribute_requests[1],
+                                        self.attribute_requests[2],
+                                    ],
+                                    {"nested_data": self.attribute_requests[3]},
+                                ),
+                            }
+                        ),
+                    }
+                ),
+            ),
+        )

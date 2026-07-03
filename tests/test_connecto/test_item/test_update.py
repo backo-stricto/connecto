@@ -595,3 +595,378 @@ class TestDatabaseItemUpdate(unittest.TestCase):
                 ),
             ),
         )
+
+    def test_update_request_simple_tuple_model_with_constants(self):
+        """Tests the validity of built update requests for a tuple model with
+        constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            (self.attribute_mocks[0], "constant", self.attribute_mocks[1]),
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        update_requests = database_item.update_request(
+            "mock_id", ("up_login", "constant", "up_contact")
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.update_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        "mock_id",
+                        (
+                            "up_login",
+                            "constant",
+                            "up_contact",
+                        ),
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:2], ["up_login", "up_contact"]
+        ):
+            assert_that(
+                attribute.update_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.update_request.return_value,
+                            "mock_id",
+                            value,
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            update_requests,
+            contains_exactly(
+                self.item_mapper.update_request.return_value,
+                contains_exactly(*self.attribute_requests[:2]),
+            ),
+        )
+
+    def test_update_request_simple_list_model_with_constants(self):
+        """Tests the validity of built update requests for a list model with
+        constants."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            [self.attribute_mocks[0], "constant", self.attribute_mocks[1]],
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        update_requests = database_item.update_request(
+            "mock_id", ["up_login", "constant", "up_contact"]
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.update_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        "mock_id",
+                        contains_exactly(
+                            "up_login",
+                            "constant",
+                            "up_contact",
+                        ),
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:2], ["up_login", "up_contact"]
+        ):
+            assert_that(
+                attribute.update_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.update_request.return_value,
+                            "mock_id",
+                            value,
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            update_requests,
+            contains_exactly(
+                self.item_mapper.update_request.return_value,
+                contains_exactly(*self.attribute_requests[:2]),
+            ),
+        )
+
+    def test_update_request_simple_dict_model_with_constants(self):
+        """Tests the validity of built update requests for a dict model."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "login": self.attribute_mocks[0],
+                "name": self.attribute_mocks[1],
+                "contact": "mock_contact",
+            },
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        update_requests = database_item.update_request(
+            "mock_id",
+            {"login": "up_login", "name": "up_name", "contact": "mock_contact"},
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.update_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        "mock_id",
+                        has_entries(
+                            {
+                                "login": "up_login",
+                                "name": "up_name",
+                                "contact": "mock_contact",
+                            }
+                        ),
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(self.attribute_mocks[:2], ["up_login", "up_name"]):
+            assert_that(
+                attribute.update_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.update_request.return_value,
+                            "mock_id",
+                            value,
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            update_requests,
+            contains_exactly(
+                self.item_mapper.update_request.return_value,
+                has_entries(
+                    {
+                        "login": self.attribute_requests[0],
+                        "name": self.attribute_requests[1],
+                    }
+                ),
+            ),
+        )
+
+    def test_update_with_missing_dict_constant(self):
+        """Tests the validity of built update requests for a dict model with
+        missing values in user input."""
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "login": self.attribute_mocks[0],
+                "name": self.attribute_mocks[1],
+                "contact": "mock_contact",
+            },
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        update_requests = database_item.update_request(
+            # Missing value for contact
+            "mock_id",
+            {"login": "new_login", "name": "new_name"},
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:2]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.update_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        "mock_id",
+                        has_entries(
+                            {
+                                "login": "new_login",
+                                "name": "new_name",
+                            }
+                        ),
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            # The contact attribute should still be created with None. In a
+            # real use case, the real attribute will decide what to do with
+            # missing value.
+            self.attribute_mocks[:2],
+            ["new_login", "new_name"],
+        ):
+            assert_that(
+                attribute.update_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.update_request.return_value,
+                            "mock_id",
+                            value,
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            update_requests,
+            contains_exactly(
+                self.item_mapper.update_request.return_value,
+                has_entries(
+                    {
+                        "login": self.attribute_requests[0],
+                        "name": self.attribute_requests[1],
+                    }
+                ),
+            ),
+        )
+
+    def test_update_request_with_complex_nested_attributes_and_constants(self):
+        """Tests the validity of built update requests for a model with
+        attributes and constants nested in dicts, lists and tuples.
+        """
+        database_item = DatabaseItem(
+            self.item_mapper,
+            {
+                "name": self.attribute_mocks[0],
+                "nested": {
+                    "data": (
+                        [self.attribute_mocks[1], self.attribute_mocks[2]],
+                        "constant",
+                        {"nested_data": self.attribute_mocks[3]},
+                    ),
+                    "time": "now",
+                },
+            },
+        )
+        # Connection used for the base request
+        database_item.connection = self.connection
+
+        update_requests = database_item.update_request(
+            "mock_id",
+            {
+                "name": "up_name",
+                "nested": {
+                    "data": (
+                        [12, 13],
+                        "constant",
+                        {"nested_data": "up_nested_value"},
+                    ),
+                    "time": "now",
+                },
+            },
+        )
+
+        # As a side effect, the connection must have been set up on all requests
+        # returned in search_requests
+        assert_that(self.base_request, has_properties(connection=self.connection))
+        for request in self.attribute_requests[:4]:
+            assert_that(request, has_properties(connection=self.connection))
+
+        assert_that(
+            self.item_mapper.update_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        "mock_id",
+                        has_entries(
+                            {
+                                "name": "up_name",
+                                "nested": has_entries(
+                                    {
+                                        "data": contains_exactly(
+                                            contains_exactly(12, 13),
+                                            "constant",
+                                            has_entries(
+                                                {"nested_data": "up_nested_value"}
+                                            ),
+                                        ),
+                                        "time": "now",
+                                    }
+                                ),
+                            }
+                        ),
+                    )
+                )
+            ),
+        )
+        for attribute, value in zip(
+            self.attribute_mocks[:4],
+            [
+                "up_name",
+                12,
+                13,
+                "up_nested_value",
+            ],
+        ):
+            assert_that(
+                attribute.update_request.call_args_list,
+                contains_exactly(
+                    has_properties(
+                        args=contains_exactly(
+                            self.item_mapper.update_request.return_value,
+                            "mock_id",
+                            value,
+                        )
+                    )
+                ),
+            )
+
+        assert_that(
+            update_requests,
+            contains_exactly(
+                self.item_mapper.update_request.return_value,
+                has_entries(
+                    {
+                        "name": self.attribute_requests[0],
+                        "nested": has_entries(
+                            {
+                                "data": contains_exactly(
+                                    [
+                                        self.attribute_requests[1],
+                                        self.attribute_requests[2],
+                                    ],
+                                    {"nested_data": self.attribute_requests[3]},
+                                ),
+                            }
+                        ),
+                    }
+                ),
+            ),
+        )
