@@ -1,7 +1,8 @@
 """Provides the specification of the ItemMapper interface."""
 
+
 class ItemMapper:
-    """ Base requests handling to support each database operations.
+    """Base requests handling to support each database operations.
 
     Each ItemMapper implementation is specific to a database type, but several
     ItemMappers might be defined for each database, depending on how data is
