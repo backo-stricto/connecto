@@ -243,16 +243,23 @@ class DatabaseItem:
         Notice the `_id` is not yet included in the result, as it only includes
         values retrieved using the `model`.
         """
-        item = self.item_mapper.load(base_request_response)
 
         if isinstance(self.model, list):
+            item = self.item_mapper.load([], base_request_response)
             _load_list(base_request_response, attribute_responses, item, self.model)
         elif isinstance(self.model, tuple):
+            # The tuple value is initialized as list, and converted to a tuple
+            # once the list has been filled with values.
+            item = self.item_mapper.load([], base_request_response)
             _load_list(base_request_response, attribute_responses, item, self.model)
             item = tuple(item)
         elif isinstance(self.model, dict):
+            item = self.item_mapper.load({}, base_request_response)
             _load_dict(base_request_response, attribute_responses, item, self.model)
         else:
+            # Nothing to load from the item_mapper if the model is a single
+            # attribute, as the single would systematically override the init
+            # value of the item mapper
             item = self.model.load(base_request_response, attribute_responses)
         return item
 

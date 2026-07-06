@@ -40,10 +40,7 @@ class TestDatabaseItemLoad(unittest.TestCase):
         # Real call to the method under test
         item = database_item.load(self.base_response, self.attribute_responses[0])
 
-        assert_that(
-            self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
-        )
+        # No item mapper load() call is required for a single attribute model
 
         assert_that(
             self.attribute_mocks[0].load.call_args_list,
@@ -78,7 +75,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly([], self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -117,7 +116,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly([], self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -170,7 +171,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly({}, self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -239,7 +242,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly({}, self.base_response))
+            ),
         )
 
         for attribute, response in zip(self.attribute_mocks, self.attribute_responses):
@@ -305,7 +310,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly({}, self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -366,7 +373,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly([], self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -407,7 +416,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly([], self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -458,7 +469,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly({}, self.base_response))
+            ),
         )
 
         for attribute, response in zip(
@@ -523,7 +536,9 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             self.item_mapper.load.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(self.base_response))),
+            contains_exactly(
+                has_properties(args=contains_exactly({}, self.base_response))
+            ),
         )
 
         for attribute, response in zip(

@@ -79,10 +79,25 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item update")
 
-    def load(self, _base_response):
+    def load(self, init_value, _base_response):
         """Loads the base JSON-like dict representation of an item from the
         response of the base request.
 
         Database attributes will then increment this representation as required.
-        The item can also be completely loaded from the base_response.
+
+        By default, the empty init value is returned.
+
+        The provided init value is an empty structure corresponding the model
+        currently loaded. It's either an empty list (`[]`) or an empty dict
+        (`{}`).
+
+        Notice that tuples are loaded as lists (and later converted to tuples by
+        the DatabaseItem itself) and that the load() method of the item mapper
+        is not called for single attribute models as it won't have any sense
+        (because the loaded model value is only the value of the attribute).
+
+        This method can be overidden to load a base value from the
+        base_response, but the returned value must always correspond to the type
+        of the init value.
         """
+        return init_value
