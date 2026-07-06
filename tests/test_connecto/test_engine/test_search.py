@@ -10,6 +10,7 @@ from hamcrest import (
     contains_inanyorder,
     calling,
     raises,
+    equal_to,
 )
 
 from connecto.engine import DatabaseEngine
@@ -27,25 +28,114 @@ class TestDatabaseEngineSearch(OperationTestCase):
         self.default_connection.execute_search.side_effect = mock_execute_request
         self.custom_connection.execute_search.side_effect = mock_execute_request
 
-    def test_search(self, database_item):
-        """Tests method DatabaseEngine.search for an existing item.
+    def test_search_single_attribute(self, database_item):
+        """Tests method DatabaseEngine.search for an existing item with a single
+        item as attribute search request.
+        """
+        engine = DatabaseEngine(self.default_connection, database_item.return_value)
 
-        The returned item must correspond to the item loaded by the database_item
-        from the connection.search results.
+        database_item.return_value.search_request.return_value = (
+            self.mock_requests[0],
+            self.mock_requests[4],
+        )
+
+        # Real call to the method under test
+        _id, item = engine.search("mock_id")
+
+        assert_that(
+            database_item.return_value.search_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+        )
+
+        # Ensure search was called with appropriate parameters.
+        assert_that(
+            self.default_connection.execute_search.call_args_list,
+            contains_inanyorder(
+                has_properties(args=contains_exactly(self.mock_requests[0]))
+            ),
+        )
+        assert_that(
+            self.custom_connection.execute_search.call_args_list,
+            contains_exactly(
+                has_properties(args=contains_exactly(self.mock_requests[4]))
+            ),
+        )
+
+        assert_that(
+            database_item.return_value.load.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        self.mock_responses[0],
+                        self.mock_responses[4],
+                    ),
+                )
+            ),
+        )
+
+        assert_that(_id, equal_to("mock_id"))
+        assert_that(item, equal_to(database_item.return_value.load.return_value))
+
+    def test_search_list(self, database_item):
+        """Tests method DatabaseEngine.search for an existing item with a list
+        of attribute search requests.
+        """
+        engine = DatabaseEngine(self.default_connection, database_item.return_value)
+
+        database_item.return_value.search_request.return_value = (
+            self.mock_requests[0],
+            self.mock_requests[1:],
+        )
+
+        # Real call to the method under test
+        _id, item = engine.search("mock_id")
+
+        assert_that(
+            database_item.return_value.search_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+        )
+
+        # Ensure search was called with appropriate parameters.
+        assert_that(
+            self.default_connection.execute_search.call_args_list,
+            contains_inanyorder(
+                *[
+                    has_properties(args=contains_exactly(mock_request))
+                    for mock_request in self.mock_requests[:4]
+                ]
+            ),
+        )
+        assert_that(
+            self.custom_connection.execute_search.call_args_list,
+            contains_inanyorder(
+                *[
+                    has_properties(args=contains_exactly(mock_request))
+                    for mock_request in self.mock_requests[4:]
+                ]
+            ),
+        )
+
+        assert_that(
+            database_item.return_value.load.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        self.mock_responses[0],
+                        contains_exactly(*self.mock_responses[1:]),
+                    ),
+                )
+            ),
+        )
+
+        assert_that(_id, equal_to("mock_id"))
+        assert_that(item, equal_to(database_item.return_value.load.return_value))
+
+    def test_search_dict(self, database_item):
+        """Tests method DatabaseEngine.search for an existing item with a
+        dictionnary of nested structures as attribute search requests.
         """
 
         engine = DatabaseEngine(self.default_connection, database_item.return_value)
-
-        database_item.return_value.load.return_value = {
-            "mock": "attribute",
-            "nested": {"item": "nested_attribute"},
-            "list": "aggregate_attribute",
-            "nested_list": [
-                ["item1", "item2"],
-                "some_value",
-                {"nested_in_list": "object"},
-            ],
-        }
 
         # pylint: disable=R0801
         database_item.return_value.search_request.return_value = (
@@ -64,7 +154,7 @@ class TestDatabaseEngineSearch(OperationTestCase):
         # pylint: enable=R0801
 
         # Real call to the method under test
-        item = engine.search("mock_id")
+        _id, item = engine.search("mock_id")
 
         assert_that(
             database_item.return_value.search_request.call_args_list,
@@ -120,22 +210,8 @@ class TestDatabaseEngineSearch(OperationTestCase):
             ),
         )
 
-        assert_that(
-            item,
-            has_entries(
-                {
-                    "_id": "mock_id",
-                    "mock": "attribute",
-                    "nested": has_entries({"item": "nested_attribute"}),
-                    "list": "aggregate_attribute",
-                    "nested_list": contains_exactly(
-                        contains_exactly("item1", "item2"),
-                        "some_value",
-                        has_entries({"nested_in_list": "object"}),
-                    ),
-                }
-            ),
-        )
+        assert_that(_id, equal_to("mock_id"))
+        assert_that(item, equal_to(database_item.return_value.load.return_value))
 
     def test_search_not_found(self, database_item):
         """Tests DatabaseEngine.search method for an non existing item.

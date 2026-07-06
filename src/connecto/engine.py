@@ -47,8 +47,7 @@ class DatabaseEngine:
             base_request, attribute_requests, _execute_search
         )
         item = self.database_item.load(base_response, attributes_responses)
-        item["_id"] = _id
-        return item
+        return _id, item
 
     def create(self, item_value):
         """Creates a new item in the database.

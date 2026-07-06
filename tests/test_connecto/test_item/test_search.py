@@ -159,7 +159,7 @@ class TestDatabaseItemSearch(unittest.TestCase):
         """Tests the validity of built search requests for a tuple model."""
         database_item = DatabaseItem(
             self.item_mapper,
-            self.attribute_mocks,
+            tuple(self.attribute_mocks),
         )
         # Connection used for the base request
         database_item.connection = self.connection

@@ -23,8 +23,78 @@ class TestDatabaseEngineDelete(OperationTestCase):
         self.default_connection.execute_delete.side_effect = mock_execute_request
         self.custom_connection.execute_delete.side_effect = mock_execute_request
 
-    def test_delete(self, database_item):
-        """Tests method DatabaseEngine.delete method for an existing item."""
+    def test_delete_single_attribute(self, database_item):
+        """Tests method DatabaseEngine.delete for an existing item with a single
+        item as attribute delete request.
+        """
+        engine = DatabaseEngine(self.default_connection, database_item.return_value)
+
+        database_item.return_value.delete_request.return_value = (
+            self.mock_requests[0],
+            self.mock_requests[4],
+        )
+
+        # Real call to the method under test
+        engine.delete("mock_id")
+
+        assert_that(
+            database_item.return_value.delete_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+        )
+
+        # Ensure delete was called with appropriate parameters.
+        assert_that(
+            self.default_connection.execute_delete.call_args_list, self.mock_requests[0]
+        )
+
+        assert_that(
+            self.custom_connection.execute_delete.call_args_list, self.mock_requests[4]
+        )
+
+    def test_delete_list(self, database_item):
+        """Tests method DatabaseEngine.delete for an existing item with a list
+        of attribute delete requests.
+        """
+        engine = DatabaseEngine(self.default_connection, database_item.return_value)
+
+        database_item.return_value.delete_request.return_value = (
+            self.mock_requests[0],
+            self.mock_requests[1:],
+        )
+
+        # Real call to the method under test
+        engine.delete("mock_id")
+
+        assert_that(
+            database_item.return_value.delete_request.call_args_list,
+            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
+        )
+
+        # Ensure delete was called with appropriate parameters.
+        assert_that(
+            self.default_connection.execute_delete.call_args_list,
+            contains_inanyorder(
+                *[
+                    has_properties(args=contains_exactly(mock_request))
+                    for mock_request in self.mock_requests[:4]
+                ]
+            ),
+        )
+
+        assert_that(
+            self.custom_connection.execute_delete.call_args_list,
+            contains_inanyorder(
+                *[
+                    has_properties(args=contains_exactly(mock_request))
+                    for mock_request in self.mock_requests[4:]
+                ]
+            ),
+        )
+
+    def test_delete_dict(self, database_item):
+        """Tests method DatabaseEngine.create for an existing item with a list
+        of attribute create requests.
+        """
 
         engine = DatabaseEngine(self.default_connection, database_item.return_value)
 
@@ -52,7 +122,7 @@ class TestDatabaseEngineDelete(OperationTestCase):
             contains_exactly(has_properties(args=contains_exactly("mock_id"))),
         )
 
-        # Ensure search was called with appropriate parameters.
+        # Ensure delete was called with appropriate parameters.
         assert_that(
             self.default_connection.execute_delete.call_args_list,
             contains_inanyorder(
