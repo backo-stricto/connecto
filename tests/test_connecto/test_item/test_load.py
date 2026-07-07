@@ -9,6 +9,8 @@ from hamcrest import (
     has_entries,
     has_properties,
     equal_to,
+    all_of,
+    instance_of,
 )
 
 from connecto.item import DatabaseItem
@@ -58,9 +60,10 @@ class TestDatabaseItemLoad(unittest.TestCase):
             equal_to("John Doe"),
         )
 
-    def test_load_simple_tuple_model(self):
-        """Tests database item loading for a tuple model."""
-        database_item = DatabaseItem(self.item_mapper, tuple(self.attribute_mocks[:3]))
+    def _test_load_simple_tuple_or_list_model(self, collection_type):
+        database_item = DatabaseItem(
+            self.item_mapper, collection_type(self.attribute_mocks[:3])
+        )
 
         self.item_mapper.load.return_value = []
         self.attribute_mocks[0].load.return_value = "jdoe"
@@ -92,53 +95,23 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             item,
-            contains_exactly(
-                "jdoe",
-                "John Doe",
-                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+            all_of(
+                instance_of(collection_type),
+                contains_exactly(
+                    "jdoe",
+                    "John Doe",
+                    contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+                ),
             ),
         )
+
+    def test_load_simple_tuple_model(self):
+        """Tests database item loading for a tuple model."""
+        self._test_load_simple_tuple_or_list_model(tuple)
 
     def test_load_simple_list_model(self):
         """Tests database item loading for a list model."""
-        database_item = DatabaseItem(self.item_mapper, self.attribute_mocks[:3])
-
-        self.item_mapper.load.return_value = []
-        self.attribute_mocks[0].load.return_value = "jdoe"
-        self.attribute_mocks[1].load.return_value = "John Doe"
-        self.attribute_mocks[2].load.return_value = [
-            "mail1@example.org",
-            "mail2@jdoe.fr",
-        ]
-
-        # Real call to the method under test
-        item = database_item.load(self.base_response, self.attribute_responses[:3])
-
-        assert_that(
-            self.item_mapper.load.call_args_list,
-            contains_exactly(
-                has_properties(args=contains_exactly([], self.base_response))
-            ),
-        )
-
-        for attribute, response in zip(
-            self.attribute_mocks[:3], self.attribute_responses[:3]
-        ):
-            assert_that(
-                attribute.load.call_args_list,
-                contains_exactly(
-                    has_properties(args=contains_exactly(self.base_response, response))
-                ),
-            )
-
-        assert_that(
-            item,
-            contains_exactly(
-                "jdoe",
-                "John Doe",
-                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
-            ),
-        )
+        self._test_load_simple_tuple_or_list_model(list)
 
     def test_load_simple_dict_model(self):
         """Tests database item loading for a dict model."""
@@ -354,11 +327,12 @@ class TestDatabaseItemLoad(unittest.TestCase):
             ),
         )
 
-    def test_load_simple_tuple_model_with_constants(self):
-        """Tests database item loading for a tuple model with constants."""
+    def _test_load_simple_tuple_or_list_model_with_constants(self, collection_type):
         database_item = DatabaseItem(
             self.item_mapper,
-            (self.attribute_mocks[0], "John Doe", self.attribute_mocks[1]),
+            collection_type(
+                [self.attribute_mocks[0], "John Doe", self.attribute_mocks[1]]
+            ),
         )
 
         self.item_mapper.load.return_value = []
@@ -390,55 +364,23 @@ class TestDatabaseItemLoad(unittest.TestCase):
 
         assert_that(
             item,
-            contains_exactly(
-                "jdoe",
-                "John Doe",
-                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+            all_of(
+                instance_of(collection_type),
+                contains_exactly(
+                    "jdoe",
+                    "John Doe",
+                    contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
+                ),
             ),
         )
+
+    def test_load_simple_tuple_model_with_constants(self):
+        """Tests database item loading for a tuple model with constants."""
+        self._test_load_simple_tuple_or_list_model_with_constants(tuple)
 
     def test_load_simple_list_model_with_constants(self):
         """Tests database item loading for a list model with constants."""
-        database_item = DatabaseItem(
-            self.item_mapper,
-            [self.attribute_mocks[0], "John Doe", self.attribute_mocks[1]],
-        )
-
-        self.item_mapper.load.return_value = []
-        self.attribute_mocks[0].load.return_value = "jdoe"
-        self.attribute_mocks[1].load.return_value = [
-            "mail1@example.org",
-            "mail2@jdoe.fr",
-        ]
-
-        # Real call to the method under test
-        item = database_item.load(self.base_response, self.attribute_responses[:2])
-
-        assert_that(
-            self.item_mapper.load.call_args_list,
-            contains_exactly(
-                has_properties(args=contains_exactly([], self.base_response))
-            ),
-        )
-
-        for attribute, response in zip(
-            self.attribute_mocks[:2], self.attribute_responses[:2]
-        ):
-            assert_that(
-                attribute.load.call_args_list,
-                contains_exactly(
-                    has_properties(args=contains_exactly(self.base_response, response))
-                ),
-            )
-
-        assert_that(
-            item,
-            contains_exactly(
-                "jdoe",
-                "John Doe",
-                contains_exactly("mail1@example.org", "mail2@jdoe.fr"),
-            ),
-        )
+        self._test_load_simple_tuple_or_list_model_with_constants(list)
 
     def test_load_simple_dict_model_with_constants(self):
         """Tests database item loading for a dict model with constants."""

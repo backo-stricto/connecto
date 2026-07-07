@@ -82,17 +82,11 @@ class DatabaseItem:
             _request_dict(
                 base_request, model_requests, self.model, _search_request, _id
             )
-        elif isinstance(self.model, list):
+        elif isinstance(self.model, (tuple, list)):
             model_requests = []
             _request_list(
                 base_request, model_requests, self.model, _search_request, _id
             )
-        elif isinstance(self.model, tuple):
-            model_requests = []
-            _request_list(
-                base_request, model_requests, self.model, _search_request, _id
-            )
-            model_requests = tuple(model_requests)
         else:
             model_requests = _search_request(self.model, base_request, _id)
 
@@ -123,17 +117,11 @@ class DatabaseItem:
             _request_dict_with_values(
                 base_request, model_requests, self.model, item_value, _create_request
             )
-        elif isinstance(self.model, list):
+        elif isinstance(self.model, (tuple, list)):
             model_requests = []
             _request_list_with_values(
                 base_request, model_requests, self.model, item_value, _create_request
             )
-        elif isinstance(self.model, tuple):
-            model_requests = []
-            _request_list_with_values(
-                base_request, model_requests, self.model, item_value, _create_request
-            )
-            model_requests = tuple(model_requests)
         else:
             model_requests = _create_request(self.model, base_request, item_value)
 
@@ -160,17 +148,11 @@ class DatabaseItem:
             _request_dict(
                 base_request, model_requests, self.model, _delete_request, _id
             )
-        elif isinstance(self.model, list):
+        elif isinstance(self.model, (tuple, list)):
             model_requests = []
             _request_list(
                 base_request, model_requests, self.model, _delete_request, _id
             )
-        elif isinstance(self.model, tuple):
-            model_requests = []
-            _request_list(
-                base_request, model_requests, self.model, _delete_request, _id
-            )
-            model_requests = tuple(model_requests)
         else:
             model_requests = _delete_request(self.model, base_request, _id)
 
@@ -205,7 +187,7 @@ class DatabaseItem:
                 _update_request,
                 _id,
             )
-        elif isinstance(self.model, list):
+        elif isinstance(self.model, (tuple, list)):
             model_requests = []
             _request_list_with_values(
                 base_request,
@@ -215,17 +197,6 @@ class DatabaseItem:
                 _update_request,
                 _id,
             )
-        elif isinstance(self.model, tuple):
-            model_requests = []
-            _request_list_with_values(
-                base_request,
-                model_requests,
-                self.model,
-                item_value,
-                _update_request,
-                _id,
-            )
-            model_requests = tuple(model_requests)
         else:
             model_requests = _update_request(self.model, base_request, _id, item_value)
 

@@ -116,11 +116,10 @@ class TestDatabaseItemDelete(unittest.TestCase):
             ),
         )
 
-    def test_delete_request_simple_tuple_model(self):
-        """Tests the validity of built delete requests for a tuple model."""
+    def _test_delete_request_simple_tuple_or_list_model(self, collection_type):
         database_item = DatabaseItem(
             self.item_mapper,
-            tuple(self.attribute_mocks),
+            collection_type(self.attribute_mocks),
         )
         # Connection used for the base request
         database_item.connection = self.connection
@@ -156,47 +155,14 @@ class TestDatabaseItemDelete(unittest.TestCase):
                 contains_exactly(*self.attribute_requests),
             ),
         )
+
+    def test_delete_request_simple_tuple_model(self):
+        """Tests the validity of built delete requests for a tuple model."""
+        self._test_delete_request_simple_tuple_or_list_model(tuple)
 
     def test_delete_request_simple_list_model(self):
         """Tests the validity of built delete requests for a list model."""
-        database_item = DatabaseItem(
-            self.item_mapper,
-            self.attribute_mocks,
-        )
-        # Connection used for the base request
-        database_item.connection = self.connection
-
-        delete_requests = database_item.delete_request("mock_id")
-
-        # As a side effect, the connection must have been set up on all requests
-        # returned in search_requests
-        assert_that(self.base_request, has_properties(connection=self.connection))
-        for request in self.attribute_requests:
-            assert_that(request, has_properties(connection=self.connection))
-
-        assert_that(
-            self.item_mapper.delete_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
-        )
-        for attribute in self.attribute_mocks:
-            assert_that(
-                attribute.delete_request.call_args_list,
-                contains_exactly(
-                    has_properties(
-                        args=contains_exactly(
-                            self.item_mapper.delete_request.return_value, "mock_id"
-                        )
-                    )
-                ),
-            )
-
-        assert_that(
-            delete_requests,
-            contains_exactly(
-                self.item_mapper.delete_request.return_value,
-                contains_exactly(*self.attribute_requests),
-            ),
-        )
+        self._test_delete_request_simple_tuple_or_list_model(list)
 
     def test_delete_request_simple_dict_model(self):
         """Tests the validity of built delete requests for a dict model."""
@@ -398,12 +364,14 @@ class TestDatabaseItemDelete(unittest.TestCase):
             ),
         )
 
-    def test_delete_request_simple_tuple_model_with_constants(self):
-        """Tests the validity of built delete requests for a tuple model with
-        constants."""
+    def _test_delete_request_simple_tuple_or_list_model_with_constants(
+        self, collection_type
+    ):
         database_item = DatabaseItem(
             self.item_mapper,
-            (self.attribute_mocks[0], "constant", self.attribute_mocks[1]),
+            collection_type(
+                [self.attribute_mocks[0], "constant", self.attribute_mocks[1]]
+            ),
         )
         # Connection used for the base request
         database_item.connection = self.connection
@@ -439,48 +407,16 @@ class TestDatabaseItemDelete(unittest.TestCase):
                 contains_exactly(*self.attribute_requests[:2]),
             ),
         )
+
+    def test_delete_request_simple_tuple_model_with_constants(self):
+        """Tests the validity of built delete requests for a tuple model with
+        constants."""
+        self._test_delete_request_simple_tuple_or_list_model_with_constants(tuple)
 
     def test_delete_request_simple_list_model_with_constants(self):
         """Tests the validity of built delete requests for a list model with
         constants."""
-        database_item = DatabaseItem(
-            self.item_mapper,
-            [self.attribute_mocks[0], "constant", self.attribute_mocks[1]],
-        )
-        # Connection used for the base request
-        database_item.connection = self.connection
-
-        delete_requests = database_item.delete_request("mock_id")
-
-        # As a side effect, the connection must have been set up on all requests
-        # returned in search_requests
-        assert_that(self.base_request, has_properties(connection=self.connection))
-        for request in self.attribute_requests[:2]:
-            assert_that(request, has_properties(connection=self.connection))
-
-        assert_that(
-            self.item_mapper.delete_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
-        )
-        for attribute in self.attribute_mocks[:2]:
-            assert_that(
-                attribute.delete_request.call_args_list,
-                contains_exactly(
-                    has_properties(
-                        args=contains_exactly(
-                            self.item_mapper.delete_request.return_value, "mock_id"
-                        )
-                    )
-                ),
-            )
-
-        assert_that(
-            delete_requests,
-            contains_exactly(
-                self.item_mapper.delete_request.return_value,
-                contains_exactly(*self.attribute_requests[:2]),
-            ),
-        )
+        self._test_delete_request_simple_tuple_or_list_model_with_constants(list)
 
     def test_delete_request_simple_dict_model_with_constants(self):
         """Tests the validity of built delete requests for a dict model."""

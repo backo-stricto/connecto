@@ -114,11 +114,10 @@ class TestDatabaseItemSearch(unittest.TestCase):
             contains_exactly(self.item_mapper.search_request.return_value, None),
         )
 
-    def test_search_request_simple_list_model(self):
-        """Tests the validity of built search requests for a list model."""
+    def _test_search_request_simple_list_or_tuple_model(self, collection_type):
         database_item = DatabaseItem(
             self.item_mapper,
-            self.attribute_mocks,
+            collection_type(self.attribute_mocks),
         )
         # Connection used for the base request
         database_item.connection = self.connection
@@ -154,47 +153,14 @@ class TestDatabaseItemSearch(unittest.TestCase):
                 contains_exactly(*self.attribute_requests),
             ),
         )
+
+    def test_search_request_simple_list_model(self):
+        """Tests the validity of built search requests for a list model."""
+        self._test_search_request_simple_list_or_tuple_model(list)
 
     def test_search_request_simple_tuple_model(self):
         """Tests the validity of built search requests for a tuple model."""
-        database_item = DatabaseItem(
-            self.item_mapper,
-            tuple(self.attribute_mocks),
-        )
-        # Connection used for the base request
-        database_item.connection = self.connection
-
-        search_requests = database_item.search_request("mock_id")
-
-        # As a side effect, the connection must have been set up on all requests
-        # returned in search_requests
-        assert_that(self.base_request, has_properties(connection=self.connection))
-        for request in self.attribute_requests:
-            assert_that(request, has_properties(connection=self.connection))
-
-        assert_that(
-            self.item_mapper.search_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
-        )
-        for attribute in self.attribute_mocks:
-            assert_that(
-                attribute.search_request.call_args_list,
-                contains_exactly(
-                    has_properties(
-                        args=contains_exactly(
-                            self.item_mapper.search_request.return_value, "mock_id"
-                        )
-                    )
-                ),
-            )
-
-        assert_that(
-            search_requests,
-            contains_exactly(
-                self.item_mapper.search_request.return_value,
-                contains_exactly(*self.attribute_requests),
-            ),
-        )
+        self._test_search_request_simple_list_or_tuple_model(tuple)
 
     def test_search_request_simple_dict_model(self):
         """Tests the validity of built search requests for a dict model."""
@@ -396,12 +362,14 @@ class TestDatabaseItemSearch(unittest.TestCase):
             ),
         )
 
-    def test_search_request_simple_list_model_with_constants(self):
-        """Tests the validity of built search requests for a list model with
-        constants."""
+    def _test_search_request_simple_list_or_tuple_model_with_constants(
+        self, collection_type
+    ):
         database_item = DatabaseItem(
             self.item_mapper,
-            model=[self.attribute_mocks[0], "constant", self.attribute_mocks[1]],
+            model=collection_type(
+                [self.attribute_mocks[0], "constant", self.attribute_mocks[1]]
+            ),
         )
         # Connection used for the base request
         database_item.connection = self.connection
@@ -440,47 +408,15 @@ class TestDatabaseItemSearch(unittest.TestCase):
             ),
         )
 
+    def test_search_request_simple_list_model_with_constants(self):
+        """Tests the validity of built search requests for a list model with
+        constants."""
+        self._test_search_request_simple_list_or_tuple_model_with_constants(list)
+
     def test_search_request_simple_tuple_model_with_constants(self):
         """Tests the validity of built search requests for a tuple model with
         constants."""
-        database_item = DatabaseItem(
-            self.item_mapper,
-            model=(self.attribute_mocks[0], "constant", self.attribute_mocks[1]),
-        )
-        # Connection used for the base request
-        database_item.connection = self.connection
-
-        search_requests = database_item.search_request("mock_id")
-
-        # As a side effect, the connection must have been set up on all requests
-        # returned in search_requests
-        assert_that(self.base_request, has_properties(connection=self.connection))
-        for request in self.attribute_requests[:2]:
-            assert_that(request, has_properties(connection=self.connection))
-
-        assert_that(
-            self.item_mapper.search_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly("mock_id"))),
-        )
-        for attribute in self.attribute_mocks[:2]:
-            assert_that(
-                attribute.search_request.call_args_list,
-                contains_exactly(
-                    has_properties(
-                        args=contains_exactly(
-                            self.item_mapper.search_request.return_value, "mock_id"
-                        )
-                    )
-                ),
-            )
-
-        assert_that(
-            search_requests,
-            contains_exactly(
-                self.item_mapper.search_request.return_value,
-                contains_exactly(*self.attribute_requests[:2]),
-            ),
-        )
+        self._test_search_request_simple_list_or_tuple_model_with_constants(tuple)
 
     def test_search_request_simple_dict_model_with_constants(self):
         """Tests the validity of built search requests for a dict model with
