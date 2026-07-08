@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "A database engine to manipulate any type of database from an user defined JSON-like schema."
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "stricto>=0.2.2",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",

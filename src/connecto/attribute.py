@@ -186,6 +186,15 @@ class DatabaseAttribute:
         :param _id: ID of the item to delete.
         """
 
+    def select_request(self, base_request, item_filter):
+        """Builds requests required to select items where the attribute matches
+        the item_filter.
+
+        :param base_request: Base request that was build by the ItemMapper to
+        delete the item associated to `_id`.
+        :param item_filter: Filter used to select items
+        """
+
     def load(self, base_response, attribute_response):
         """Returns the value of the attribute computed from specified database
         responses.

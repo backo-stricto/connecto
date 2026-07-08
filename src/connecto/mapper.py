@@ -79,11 +79,24 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item update")
 
+    def select_request(self, item_filter):
+        """Builds a request that can be used as a base request to select items
+        matching the specified filter.
+
+        The request does not need to return exactly the list of items matching
+        the filter, but must ensure all items in the database matching the
+        filter can be loaded from the response. This means a request returning
+        all items will be a valid response for any filter.
+
+        :param item_filter: Stricto item filter
+        """
+        raise NotImplementedError("This ItemMapper does not support select")
+
     def load(self, init_value, _base_response):
         """Loads the base JSON-like dict representation of an item from the
         response of the base request.
 
-        Database attributes will then increment this representation as required.
+        Database attributes will then increment this representation.
 
         By default, the empty init value is returned.
 
@@ -101,3 +114,50 @@ class ItemMapper:
         of the init value.
         """
         return init_value
+
+    def load_items(self, _base_init_factory, _base_response):
+        """Loads a list of base JSON-like structure representation of items from
+        response of the base select request.
+
+        Database attributes will then increment the representation of each item.
+        The items can also be completely loaded from the base_response.
+
+        This method must be implemented to return a list of tuple `(_id,
+        <init_value>)` for **all** items included in the base response, so that
+        each one can be loaded from the model. Entries not returned by this
+        method won't be considered.
+
+        The base init factory is a callable without argument that can be used to
+        produce empty init values for each entry. It produces either empty lists
+        (`[]`), empty dicts (`{}`) or `None` depending on the type of the model.
+
+        Lists are used to initialize tuple and list models, dicts for dict
+        models, and None for single attribute models.
+
+        Implementations are free to build any init value for each item, but its
+        type must always correspond to the type of values produced by the base
+        init factory.
+        """
+
+    def select_response(self, _id, base_request_response, attribute_responses):
+        """Extracts responses from a select response that can be used to load()
+        the item associated to `_id`.
+
+        Responses to select requests are expected to include data for several
+        items. For the base request it will be many base items, for attribute
+        responses it will be values for many attributes.
+
+        This method extracts the data that can be used to load() each item and
+        attribute from each response.
+
+        The returned objects must be valid parameters for the
+        DatabaseItem.load() method, so that the item associated to `_id` is
+        loaded as if it were from a search request for that specific `_id`.
+
+        :param _id: ID of the item that must be loaded
+        :param base_request_response: Response to a select request, including
+        base data for all items
+        :param base_attribute_response: Response to a select request, including
+        data of a specific attribute for all items
+        """
+        return base_request_response, attribute_responses
