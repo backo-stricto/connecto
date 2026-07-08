@@ -3,7 +3,7 @@
 They can be run with unittest tests.test_connecto
 """
 
-from .test_engine import TestDatabaseEngine
+from .test_engine import *
 from .test_attribute import TestDatabaseAttribute
 from .test_utils import *
 from .test_item import *

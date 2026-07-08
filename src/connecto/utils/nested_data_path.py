@@ -26,13 +26,12 @@ A path does not need to reach a leaf in the structure, so `[2, "nested"]` is a
 valid path to `"data": ["bip", "boop", Item(2)]`.
 """
 
+
 class PathError(Exception):
-    """Error raised if a path could not be processed.
-    """
+    """Error raised if a path could not be processed."""
 
     def __init__(self, data, path):
-        """Initializes the standard exception with an excplicit message.
-        """
+        """Initializes the standard exception with an excplicit message."""
         super().__init__(f"Path {path} could not be resolved in {data}.")
 
 
@@ -57,6 +56,7 @@ def find(data, path):
         raise PathError(data, path)
     return data
 
+
 def _update_next_dict(data, path, value):
     try:
         update(data[path[0]], path[1:], value)
@@ -66,6 +66,7 @@ def _update_next_dict(data, path, value):
         elif isinstance(path[1], int):
             data[path[0]] = []
         update(data[path[0]], path[1:], value)
+
 
 def _update_next_list(data, path, value):
     if isinstance(path[0], int):
@@ -81,6 +82,7 @@ def _update_next_list(data, path, value):
     else:
         # List index must be int
         raise PathError(data, path)
+
 
 def update(data, path, value):
     """Updates the item at path in data with the associated value, so that the
