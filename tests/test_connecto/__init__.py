@@ -8,3 +8,4 @@ from .test_attribute import TestDatabaseAttribute
 from .test_utils import *
 from .test_item import *
 from .test_reverse_ref import TestReverseRef
+from .test_yaml import *

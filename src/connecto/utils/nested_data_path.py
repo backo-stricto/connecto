@@ -34,6 +34,13 @@ class PathError(Exception):
         """Initializes the standard exception with an excplicit message."""
         super().__init__(f"Path {path} could not be resolved in {data}.")
 
+def equal_path(data_path_1, data_path_2):
+    if len(data_path_1) != len(data_path_2):
+        return False
+    for p1, p2 in zip(data_path_1, data_path_2):
+        if p1 != p2:
+            return False
+    return True
 
 def find(data, path):
     """Returns the item at path in data.
