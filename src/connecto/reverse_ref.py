@@ -101,7 +101,7 @@ class ReverseRef(DatabaseAttribute):
                 # Base response
                 attribute_response[0],
                 # Responses for attributes of the filter
-                attribute_response[1:],
+                attribute_response[1],
             )
         )
         # Use the select_engine to select referenced items.
