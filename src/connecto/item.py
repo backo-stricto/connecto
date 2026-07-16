@@ -2,7 +2,7 @@
 
 from .mapper import ItemMapper
 from .attribute import DatabaseAttribute
-
+from .connection import DatabaseConnection
 
 class DatabaseItem:
     """A DatabaseItem specifies how data should be loaded from the database to
@@ -17,7 +17,7 @@ class DatabaseItem:
     DatabaseItem specifies how to retrieve them from a specific database.
     """
 
-    def __init__(self, item_mapper: ItemMapper, model):
+    def __init__(self, item_mapper: ItemMapper, model: dict):
         """
         The `item_mapper` specifies how to build base requests for each
         operation. Each attribute of the model is then allowed to modify the
@@ -50,7 +50,7 @@ class DatabaseItem:
         # set_default_connection
         self.connection = None
 
-    def set_default_connection(self, connection):
+    def set_default_connection(self, connection:DatabaseConnection):
         """Sets the connection that will be used to perform base requests and
         attribute requests, unless the attribute is already associated to a
         specific connection.

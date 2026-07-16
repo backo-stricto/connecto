@@ -1,3 +1,15 @@
+from .request import (
+    DataCreateRequest,
+    DataDeleteRequest,
+    DataCreateResponse,
+    DataDeleteResponse,
+    DataSearchRequest,
+    DataSearchResponse,
+    DataSelectRequest,
+    DataSelectResponse,
+    DataUpdateRequest,
+    DataUpdateResponse,
+)
 """Provides the specification of the DatabaseConnection interface."""
 
 
@@ -17,31 +29,31 @@ class DatabaseConnection:
     requirement.
     """
 
-    def execute_search(self, request):
+    def execute_search(self, request: DataSearchRequest)-> DataSearchResponse:
         """Executes the search request and returns the corresponding response."""
         raise NotImplementedError(
             "This DatabaseConnection does not support item search"
         )
 
-    def execute_create(self, request):
+    def execute_create(self, request: DataCreateRequest)-> DataCreateResponse:
         """Executes the create request and returns the corresponding response."""
         raise NotImplementedError(
             "This DatabaseConnection does not support item creation"
         )
 
-    def execute_delete(self, request):
+    def execute_delete(self, request: DataDeleteRequest)-> DataDeleteResponse:
         """Executes the delete request and returns the corresponding response."""
         raise NotImplementedError(
             "This DatabaseConnection does not support item deletion"
         )
 
-    def execute_update(self, request):
+    def execute_update(self, request: DataUpdateRequest)-> DataUpdateResponse:
         """Executes the update request and returns the corresponding response."""
         raise NotImplementedError(
             "This DatabaseConnection does not support item update"
         )
 
-    def execute_select(self, request):
+    def execute_select(self, request: DataSelectRequest)-> DataSelectResponse:
         """Executes the select request and returns the corresponding response."""
         raise NotImplementedError(
             "This DatabaseConnection does not support item selection"

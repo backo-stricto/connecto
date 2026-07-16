@@ -1,5 +1,20 @@
 """Provides the specification of the DatabaseAttribute interface."""
 
+from typing import Any
+from .request import (
+    DataCreateRequest,
+    DataDeleteRequest,
+    DataCreateResponse,
+    DataDeleteResponse,
+    DataSearchRequest,
+    DataSearchResponse,
+    DataSelectRequest,
+    DataSelectResponse,
+    DataUpdateRequest,
+    DataUpdateResponse,
+)
+from .connection import DatabaseConnection
+
 
 class DatabaseAttribute:
     """Interface that should be implemented by attributes available for each
@@ -28,7 +43,7 @@ class DatabaseAttribute:
       model structures.
     """
 
-    def __init__(self, connection=None):
+    def __init__(self, connection: DatabaseConnection | None = None):
         """Initializes the DatabaseAttribute.
 
         It is very likely that you will need to define a custom constructor to
@@ -81,7 +96,7 @@ class DatabaseAttribute:
         self.connection = connection
         self.attribute_path = None
 
-    def set_default_connection(self, connection):
+    def set_default_connection(self, connection: DatabaseConnection):
         """Sets the default connection used to execute requests produced by this
         item.
 
@@ -153,7 +168,7 @@ class DatabaseAttribute:
         """
         self.attribute_path = attribute_path
 
-    def search_request(self, base_request, _id):
+    def search_request(self, base_request: DataSearchRequest, _id: Any):
         """Builds requests required to fetch the value of the attribute.
 
         :param base_request: Base request that was build by the ItemMapper to search
@@ -161,7 +176,7 @@ class DatabaseAttribute:
         :param _id: ID of the item to search.
         """
 
-    def create_request(self, base_request, value):
+    def create_request(self, base_request: DataCreateRequest, value):
         """Builds requests required to create the value of the attribute.
 
         :param base_request: Base request that was build by the ItemMapper to create
@@ -169,7 +184,7 @@ class DatabaseAttribute:
         :param value: Value that should be assigned to the attribute itself
         """
 
-    def update_request(self, base_request, _id, value):
+    def update_request(self, base_request: DataUpdateRequest, _id, value: Any) -> None:
         """Builds requests required to update the value of the attribute.
 
         :param base_request: Base request that was build by the ItemMapper to update
@@ -178,7 +193,7 @@ class DatabaseAttribute:
         :param value: Value that should be assigned to the attribute itself
         """
 
-    def delete_request(self, base_request, _id):
+    def delete_request(self, base_request: DataDeleteRequest, _id) -> None:
         """Builds requests required to delete the attribute.
 
         :param base_request: Base request that was build by the ItemMapper to
@@ -186,7 +201,7 @@ class DatabaseAttribute:
         :param _id: ID of the item to delete.
         """
 
-    def select_request(self, base_request, item_filter):
+    def select_request(self, base_request: DataSelectRequest, item_filter: Any) -> None:
         """Builds requests required to select items where the attribute matches
         the item_filter.
 
@@ -195,7 +210,9 @@ class DatabaseAttribute:
         :param item_filter: Filter used to select items
         """
 
-    def load(self, base_response, attribute_response):
+    def load(
+        self, base_response: DataSearchResponse, attribute_response: DataSearchResponse
+    ) -> None:
         """Returns the value of the attribute computed from specified database
         responses.
 

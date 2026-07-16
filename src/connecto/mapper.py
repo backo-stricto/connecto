@@ -1,3 +1,16 @@
+from typing import Any
+from .request import (
+    DataCreateRequest,
+    DataDeleteRequest,
+    DataCreateResponse,
+    DataDeleteResponse,
+    DataSearchRequest,
+    DataSearchResponse,
+    DataSelectRequest,
+    DataSelectResponse,
+    DataUpdateRequest,
+    DataUpdateResponse,
+)
 """Provides the specification of the ItemMapper interface."""
 
 
@@ -30,7 +43,7 @@ class ItemMapper:
     they use the same database request types.
     """
 
-    def created_id(self, create_response) -> str:
+    def created_id(self, create_response:DataCreateResponse) -> str:
         """Retrieve the id of the created item from the response of the base
         create request.
 
@@ -42,7 +55,7 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item creation")
 
-    def search_request(self, _id):
+    def search_request(self, _id) -> DataSearchRequest:
         """Builds a request that can be used as a base request to search the
         item associated to _id.
 
@@ -51,7 +64,7 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item search")
 
-    def create_request(self, item_value):
+    def create_request(self, item_value) -> DataCreateRequest:
         """Builds a request that can be used as a base request to create a new
         item with the specified value.
 
@@ -60,7 +73,7 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item creation")
 
-    def delete_request(self, _id):
+    def delete_request(self, _id) -> DataDeleteRequest:
         """Builds a request that can be used as a base request to delete a new
         item with the specified value.
 
@@ -69,7 +82,7 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item deletion")
 
-    def update_request(self, _id, item_value):
+    def update_request(self, _id, item_value) -> DataUpdateRequest:
         """Builds a request that can be used as a base request to update the
         item associated to _id with the specified value.
 
@@ -79,7 +92,7 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support item update")
 
-    def select_request(self, item_filter):
+    def select_request(self, item_filter) -> DataSelectRequest:
         """Builds a request that can be used as a base request to select items
         matching the specified filter.
 
@@ -92,7 +105,7 @@ class ItemMapper:
         """
         raise NotImplementedError("This ItemMapper does not support select")
 
-    def load(self, init_value, _base_response):
+    def load(self, init_value: Any, _base_response: DataSearchResponse):
         """Loads the base JSON-like dict representation of an item from the
         response of the base request.
 
@@ -115,7 +128,7 @@ class ItemMapper:
         """
         return init_value
 
-    def load_items(self, _base_init_factory, _base_response):
+    def load_items(self, _base_init_factory, _base_response: DataSelectResponse):
         """Loads a list of base JSON-like structure representation of items from
         response of the base select request.
 
@@ -139,7 +152,7 @@ class ItemMapper:
         init factory.
         """
 
-    def select_response(self, _id, base_request_response, attribute_responses):
+    def select_response(self, _id, base_request_response: DataSelectResponse, attribute_responses: DataSelectResponse) -> tuple [ DataSelectResponse, DataSelectResponse ]:
         """Extracts responses from a select response that can be used to load()
         the item associated to `_id`.
 

@@ -22,6 +22,9 @@ Issues = "https://github.com/backo-stricto/connecto/issues"
 requires = ["uv_build >= 0.11.23, <0.12.0"]
 build-backend = "uv_build"
 
+[project.optional-dependencies]
+mongo = ["pymongo"]
+
 [dependency-groups]
 dev = [
     "black>=26.5.1",
