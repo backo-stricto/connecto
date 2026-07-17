@@ -1,5 +1,6 @@
 """Provides the specification of the DatabaseAttribute interface."""
 
+from .item_filter import AttributeFilterCompiler
 
 class DatabaseAttribute:
     """Interface that should be implemented by attributes available for each
@@ -28,7 +29,7 @@ class DatabaseAttribute:
       model structures.
     """
 
-    def __init__(self, connection=None):
+    def __init__(self, connection=None, attribute_filter=AttributeFilterCompiler()):
         """Initializes the DatabaseAttribute.
 
         It is very likely that you will need to define a custom constructor to
@@ -79,6 +80,7 @@ class DatabaseAttribute:
         provided to set_default_connection by the DatabaseEngine will be used.
         """
         self.connection = connection
+        self.attribute_filter = attribute_filter
         self.attribute_path = None
 
     def set_default_connection(self, connection):
@@ -186,13 +188,12 @@ class DatabaseAttribute:
         :param _id: ID of the item to delete.
         """
 
-    def select_request(self, base_request, item_filter):
+    def select_request(self, base_request):
         """Builds requests required to select items where the attribute matches
         the item_filter.
 
         :param base_request: Base request that was build by the ItemMapper to
         delete the item associated to `_id`.
-        :param item_filter: Filter used to select items
         """
 
     def load(self, base_response, attribute_response):

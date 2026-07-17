@@ -11,7 +11,13 @@ from hamcrest import (
     contains_exactly,
 )
 
-from connecto.utils.nested_data_path import find, update, delete, PathError
+from connecto.utils.nested_data_path import (
+    find,
+    update,
+    delete,
+    from_jsonpath,
+    PathError,
+)
 
 
 class TestNestedDataPathFind(unittest.TestCase):
@@ -203,3 +209,29 @@ class TestNestedDataPathDelete(unittest.TestCase):
         data = {"data": []}
         path = ["data", "key"]
         assert_that(calling(delete).with_args(data, path), raises(PathError))
+
+    def test_from_jsonpath_absolute(self):
+        assert_that(
+            from_jsonpath("$.mock.path[5].to.data"),
+            contains_exactly("mock", "path", 5, "to", "data"),
+        )
+
+    def test_from_jsonpath_relative(self):
+        assert_that(
+            from_jsonpath("@.mock.path[5].to.data"),
+            contains_exactly("mock", "path", 5, "to", "data"),
+        )
+
+    def test_from_jsonpath_absolute_array(self):
+        assert_that(from_jsonpath("$[5].to.data"), contains_exactly(5, "to", "data"))
+
+    def test_from_jsonpath_relative_array(self):
+        assert_that(from_jsonpath("@[5].to.data"), contains_exactly(5, "to", "data"))
+
+    def test_from_jsonpath_begin_key_path(self):
+        assert_that(
+            from_jsonpath("path.to.data"), contains_exactly("path", "to", "data")
+        )
+
+    def test_from_jsonpath_begin_index_path(self):
+        assert_that(from_jsonpath("[5].to.data"), contains_exactly(5, "to", "data"))

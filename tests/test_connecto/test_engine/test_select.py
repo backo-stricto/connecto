@@ -43,8 +43,19 @@ class TestDatabaseEngineSelect(OperationTestCase):
         items = engine.select(item_filter)
 
         assert_that(
-            database_item.return_value.select_request.call_args_list,
+            database_item.return_value.select_filter.call_args_list,
             contains_exactly(has_properties(args=contains_exactly(item_filter))),
+        )
+
+        assert_that(
+            database_item.return_value.select_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        database_item.return_value.select_filter.return_value
+                    )
+                )
+            ),
         )
 
         # Ensure select was called with appropriate parameters.
@@ -93,8 +104,19 @@ class TestDatabaseEngineSelect(OperationTestCase):
         items = engine.select(item_filter)
 
         assert_that(
-            database_item.return_value.select_request.call_args_list,
+            database_item.return_value.select_filter.call_args_list,
             contains_exactly(has_properties(args=contains_exactly(item_filter))),
+        )
+
+        assert_that(
+            database_item.return_value.select_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        database_item.return_value.select_filter.return_value
+                    )
+                )
+            ),
         )
 
         # Ensure select was called with appropriate parameters.
@@ -161,8 +183,19 @@ class TestDatabaseEngineSelect(OperationTestCase):
         items = engine.select(item_filter)
 
         assert_that(
-            database_item.return_value.select_request.call_args_list,
+            database_item.return_value.select_filter.call_args_list,
             contains_exactly(has_properties(args=contains_exactly(item_filter))),
+        )
+
+        assert_that(
+            database_item.return_value.select_request.call_args_list,
+            contains_exactly(
+                has_properties(
+                    args=contains_exactly(
+                        database_item.return_value.select_filter.return_value
+                    )
+                )
+            ),
         )
 
         # Ensure select was called with appropriate parameters.

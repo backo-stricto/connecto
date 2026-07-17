@@ -8,6 +8,7 @@ from .test_search import TestDatabaseItemSearch
 from .test_create import TestDatabaseItemCreate
 from .test_delete import TestDatabaseItemDelete
 from .test_update import TestDatabaseItemUpdate
-from .test_select import TestDatabaseItemSelect
+from .test_select_request import TestDatabaseItemSelectRequest
+from .test_select_filter import TestDatabaseItemSelectFilter
 from .test_load import TestDatabaseItemLoad
 from .test_load_items import TestDatabaseItemLoadItems

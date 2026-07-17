@@ -122,8 +122,13 @@ class DatabaseEngine:
 
         :param item_filter: A Stricto SFilter to convert to database requests
         """
+
+        compiled_filter = None
+        if item_filter:
+            compiled_filter = self.database_item.select_filter(item_filter)
+
         base_request, attribute_requests = self.database_item.select_request(
-            item_filter
+            compiled_filter
         )
 
         base_response, attribute_responses = _execute_requests(

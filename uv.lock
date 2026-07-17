@@ -59,8 +59,9 @@ name = "connecto"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "stricto" },
+    { name = "jsonpath-python" },
     { name = "pyyaml" },
+    { name = "stricto" },
 ]
 
 [package.dev-dependencies]
@@ -72,8 +73,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-	{ name = "stricto", specifier = ">=0.2.2" },
-	{ name = "pyyaml", specifier = ">=6.0.3" }
+    { name = "jsonpath-python", specifier = ">=1.1.6" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "stricto", specifier = ">=0.2.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -99,6 +101,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ef/7c/ec4ab396d31b3b395e2e999c8f46dec78c5e29209fac49d1f4dace04041d/isort-8.0.1.tar.gz", hash = "sha256:171ac4ff559cdc060bcfff550bc8404a486fee0caab245679c2abe7cb253c78d", size = 769592, upload-time = "2026-02-28T10:08:20.685Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3e/95/c7c34aa53c16353c56d0b802fba48d5f5caa2cdee7958acbcb795c830416/isort-8.0.1-py3-none-any.whl", hash = "sha256:28b89bc70f751b559aeca209e6120393d43fbe2490de0559662be7a9787e3d75", size = 89733, upload-time = "2026-02-28T10:08:19.466Z" },
+]
+
+[[package]]
+name = "jsonpath-python"
+version = "1.1.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/18/4ca8742534a5993ff383f7602e325ce2d5d7cc93d72ac5e1cdedbea8a458/jsonpath_python-1.1.6.tar.gz", hash = "sha256:dded9932b4ec41fb8726e09c83afa4e6be618f938c2db287cc2a81723c639671", size = 88178, upload-time = "2026-05-07T01:26:34.482Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/8a/1270a6803bd821cbfcdda387eaa13cb41a7b1f7b9bd145979b3bfb9d6cb7/jsonpath_python-1.1.6-py3-none-any.whl", hash = "sha256:a1c50afd8d3fbbaf47a4873bc890dcb3c15da96f5c020327977d844d8731a2d4", size = 14453, upload-time = "2026-05-07T01:26:33.306Z" },
 ]
 
 [[package]]
@@ -193,15 +204,6 @@ wheels = [
 ]
 
 [[package]]
-name = "stricto"
-version = "0.2.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/20/e8/72589adfcdecb74ab19909de90cd74dc05c5e96ede4f924c1ca9a4771deb/stricto-0.2.2.tar.gz", hash = "sha256:ff4b7751bc5510489089118e662ab62b8e387b50ec336784c7917107b3b04889", size = 59094, upload-time = "2026-06-18T15:46:04.849Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/58/c6a0a222c0390bb113e767495faddd6a8b3e980705c828db0375e0d2d641/stricto-0.2.2-py3-none-any.whl", hash = "sha256:f01541db594daac2fb1d85cba6512d4e71a93fe5a621823e643433cf237fa7fa", size = 48324, upload-time = "2026-06-18T15:46:03.724Z" },
-]
-
-[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -225,6 +227,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/da/92/1446574745d74df0c92e6aa4a7b0b3130706a4142b2d1a5869f2eaa423c6/pyyaml-6.0.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:16249ee61e95f858e83976573de0f5b2893b3677ba71c9dd36b9cf8be9ac6d65", size = 829923, upload-time = "2025-09-25T21:32:54.537Z" },
     { url = "https://files.pythonhosted.org/packages/f0/7a/1c7270340330e575b92f397352af856a8c06f230aa3e76f86b39d01b416a/pyyaml-6.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:4ad1906908f2f5ae4e5a8ddfce73c320c2a1429ec52eafd27138b7f1cbe341c9", size = 174062, upload-time = "2025-09-25T21:32:55.767Z" },
     { url = "https://files.pythonhosted.org/packages/f1/12/de94a39c2ef588c7e6455cfbe7343d3b2dc9d6b6b2f40c4c6565744c873d/pyyaml-6.0.3-cp314-cp314t-win_arm64.whl", hash = "sha256:ebc55a14a21cb14062aa4162f906cd962b28e2e9ea38f9b4391244cd8de4ae0b", size = 149341, upload-time = "2025-09-25T21:32:56.828Z" },
+]
+
+[[package]]
+name = "stricto"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/20/e8/72589adfcdecb74ab19909de90cd74dc05c5e96ede4f924c1ca9a4771deb/stricto-0.2.2.tar.gz", hash = "sha256:ff4b7751bc5510489089118e662ab62b8e387b50ec336784c7917107b3b04889", size = 59094, upload-time = "2026-06-18T15:46:04.849Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/58/c6a0a222c0390bb113e767495faddd6a8b3e980705c828db0375e0d2d641/stricto-0.2.2-py3-none-any.whl", hash = "sha256:f01541db594daac2fb1d85cba6512d4e71a93fe5a621823e643433cf237fa7fa", size = 48324, upload-time = "2026-06-18T15:46:03.724Z" },
 ]
 
 [[package]]
