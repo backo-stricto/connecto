@@ -152,7 +152,7 @@ class ItemMapper:
         init factory.
         """
 
-    def select_response(self, _id, base_request_response: DataSelectResponse, attribute_responses: DataSelectResponse) -> tuple [ DataSelectResponse, DataSelectResponse ]:
+    def select_response(self, _id, base_request_response: DataSelectResponse, attribute_responses: DataSelectResponse) -> tuple [ DataSearchResponse, DataSearchResponse ]:
         """Extracts responses from a select response that can be used to load()
         the item associated to `_id`.
 

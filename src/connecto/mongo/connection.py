@@ -94,7 +94,7 @@ class MongoConnection(DatabaseConnection):
         except Exception as e:
             raise DBError('Mongo close error at "{0}"', self._connection_string) from e
 
-    def execute_search(self, request: MongoSearchRequest):
+    def execute_search(self, request: MongoSearchRequest)-> MongoSearchResponse:
 
         try:
             db_filter = {"_id": ObjectId(request._id)}
@@ -112,7 +112,7 @@ class MongoConnection(DatabaseConnection):
 
         return MongoSearchResponse(o)
 
-    def execute_create(self, request: MongoCreateRequest):
+    def execute_create(self, request: MongoCreateRequest)-> MongoCreateResponse:
         try:
             result = self._collection.insert_one(request.obj)
         except Exception as e:
@@ -122,7 +122,7 @@ class MongoConnection(DatabaseConnection):
 
         return MongoCreateResponse(result.inserted_id)
 
-    def execute_delete(self, request: MongoDeleteRequest):
+    def execute_delete(self, request: MongoDeleteRequest)-> MongoDeleteResponse:
 
         try:
             db_filter = {"_id": ObjectId(request._id)}
@@ -138,7 +138,7 @@ class MongoConnection(DatabaseConnection):
             ) from e
         return MongoDeleteResponse()
 
-    def execute_update(self, request: MongoUpdateRequest):
+    def execute_update(self, request: MongoUpdateRequest) -> MongoUpdateResponse:
 
         o = request.obj
         o["_id"] = ObjectId(request._id)
@@ -155,6 +155,17 @@ class MongoConnection(DatabaseConnection):
 
         return MongoUpdateResponse()
 
-    def execute_select(self, request: MongoSelectRequest):
+    def execute_select(self, request: MongoSelectRequest) -> MongoSelectResponse:
+
+
+        result_list = list(
+            self._collection.find({}, {}
+            #.sort(sort_object)
+            #.skip(num_of_element_to_skip)
+            #.limit(page_size)
+        ))
+
+
         items = {}
+        
         return MongoSelectResponse(items)
