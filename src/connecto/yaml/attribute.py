@@ -72,7 +72,7 @@ class YamlAttribute(DatabaseAttribute):
         # Nothing to do, the complete item will be deleted by the base request
         pass
 
-    def select_request(self, base_request, item_filter):
+    def select_request(self, base_request):
         # Nothing to do, the requested field will already be included in the
         # response of the base_request, that include the complete object
         # associated to each item

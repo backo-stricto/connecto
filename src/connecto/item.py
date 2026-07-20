@@ -2,6 +2,7 @@
 
 from .mapper import ItemMapper
 from .attribute import DatabaseAttribute
+from .item_filter import FilterCompiler, ItemFilterCompiler
 
 
 class DatabaseItem:
@@ -17,7 +18,12 @@ class DatabaseItem:
     DatabaseItem specifies how to retrieve them from a specific database.
     """
 
-    def __init__(self, item_mapper: ItemMapper, model):
+    def __init__(
+        self,
+        item_mapper: ItemMapper,
+        model,
+        item_filter_compiler: ItemFilterCompiler = ItemFilterCompiler(),
+    ):
         """
         The `item_mapper` specifies how to build base requests for each
         operation. Each attribute of the model is then allowed to modify the
@@ -49,6 +55,7 @@ class DatabaseItem:
         # It is set by the DatabaseEngine using
         # set_default_connection
         self.connection = None
+        self.filter_compiler = FilterCompiler(self.model, item_filter_compiler)
 
     def set_default_connection(self, connection):
         """Sets the connection that will be used to perform base requests and
@@ -220,18 +227,26 @@ class DatabaseItem:
         model_requests = None
         if isinstance(self.model, dict):
             model_requests = {}
-            _request_dict(
-                base_request, model_requests, self.model, _select_request, item_filter
-            )
+            _request_dict(base_request, model_requests, self.model, _select_request)
         elif isinstance(self.model, (list, tuple)):
             model_requests = []
-            _request_list(
-                base_request, model_requests, self.model, _select_request, item_filter
-            )
+            _request_list(base_request, model_requests, self.model, _select_request)
         else:
-            model_requests = _select_request(self.model, base_request, item_filter)
+            model_requests = _select_request(self.model, base_request)
 
         return base_request, model_requests
+
+    def select_filter(self, item_sfilter):
+        """Compiles a database filter from the specified SFilter.
+
+        The database filter is compiled from the generic item filter and from
+        the attribute filter associated to each attribute of the model.
+
+        :param item_sfilter: An SFilter to apply to the model. The filter should be
+        based and the model structure, but it is allowed to match attributes not
+        included in the model.
+        """
+        return self.filter_compiler.compile_filter(item_sfilter)
 
     def load(self, base_request_response, attribute_responses):
         """Loads the item in a JSON-like structure from the database response.
@@ -390,12 +405,11 @@ def _update_request(attribute, base_request, _id, value):
     )
 
 
-def _select_request(attribute, base_request, item_filter):
-    """Builds select requests as attribute.select_request(base_request,
-    item_filter) and sets connection on all requests.
-    """
+def _select_request(attribute, base_request):
+    """Builds select requests as attribute.select_request(base_request) and sets
+    connection on all requests."""
     return _requests_with_connection(
-        attribute.select_request(base_request, item_filter), attribute.connection
+        attribute.select_request(base_request), attribute.connection
     )
 
 

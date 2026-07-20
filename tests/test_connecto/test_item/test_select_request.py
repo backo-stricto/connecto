@@ -18,7 +18,7 @@ from connecto.mapper import ItemMapper
 from connecto.connection import DatabaseConnection
 
 
-class TestDatabaseItemSelect(unittest.TestCase):
+class TestDatabaseItemSelectRequest(unittest.TestCase):
     """Tests select requests building depending on the complexity of the model."""
 
     def setUp(self):
@@ -47,8 +47,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter("$", Operator.EQ, "mock_id")
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -59,15 +59,13 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         assert_that(
             self.attribute_mocks[0].select_request.call_args_list,
             contains_exactly(
                 has_properties(
-                    args=contains_exactly(
-                        self.item_mapper.select_request.return_value, item_filter
-                    )
+                    args=contains_exactly(self.item_mapper.select_request.return_value)
                 )
             ),
         )
@@ -90,8 +88,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter("$", Operator.EQ, "mock_id")
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -99,15 +97,13 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         assert_that(
             self.attribute_mocks[0].select_request.call_args_list,
             contains_exactly(
                 has_properties(
-                    args=contains_exactly(
-                        self.item_mapper.select_request.return_value, item_filter
-                    )
+                    args=contains_exactly(self.item_mapper.select_request.return_value)
                 )
             ),
         )
@@ -125,17 +121,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                SFilter("[0]", Operator.EQ, "data"),
-                # No filter for item 1
-                SFilter("[2]", Operator.GT, 12),
-                # No filter for other items
-            ],
-        )
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -145,7 +132,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks:
             assert_that(
@@ -156,8 +143,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                             # TODO: The complete filter is currently passed to
                             # each attribute, because the DatabaseItem cannot
                             # interpret the filter for now
-                            self.item_mapper.select_request.return_value,
-                            item_filter,
+                            self.item_mapper.select_request.return_value
                         )
                     )
                 ),
@@ -192,16 +178,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                # No need to specify a filter for each field
-                SFilter("login", Operator.EQ, "mock_login"),
-                SFilter("name", Operator.REG, "mock.*"),
-            ],
-        )
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -211,7 +189,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks[:3]:
             assert_that(
@@ -219,11 +197,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            # TODO: The complete filter is currently passed to
-                            # each attribute, because the DatabaseItem cannot
-                            # interpret the filter for now
                             self.item_mapper.select_request.return_value,
-                            item_filter,
                         )
                     )
                 ),
@@ -263,18 +237,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                SFilter("nested.data[0][0]", Operator.EQ, 13),
-                SFilter("nested.data[0][1]", Operator.EQ, 12),
-                SFilter("nested.data[1]", Operator.REG, r"\S*"),
-                SFilter("nested.time", Operator.LT, 2027),
-            ],
-        )
-
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -284,7 +248,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks:
             assert_that(
@@ -292,7 +256,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            self.item_mapper.select_request.return_value, item_filter
+                            self.item_mapper.select_request.return_value
                         )
                     )
                 ),
@@ -348,15 +312,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                SFilter("foo", Operator.EQ, "value"),
-                SFilter("nested.bar", Operator.GT, 13),
-            ],
-        )
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -366,7 +323,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks[:2]:
             assert_that(
@@ -374,7 +331,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            self.item_mapper.select_request.return_value, item_filter
+                            self.item_mapper.select_request.return_value
                         )
                     )
                 ),
@@ -422,17 +379,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                SFilter("[0]", Operator.EQ, "data"),
-                # No filter for item 1
-                SFilter("[2]", Operator.GT, 12),
-                # No filter for other items
-            ],
-        )
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -442,7 +390,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks[:2]:
             assert_that(
@@ -450,11 +398,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            # TODO: The complete filter is currently passed to
-                            # each attribute, because the DatabaseItem cannot
-                            # interpret the filter for now
                             self.item_mapper.select_request.return_value,
-                            item_filter,
                         )
                     )
                 ),
@@ -492,16 +436,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                # No need to specify a filter for each field
-                SFilter("login", Operator.EQ, "mock_login"),
-                SFilter("contact", Operator.REG, "mock.*"),
-            ],
-        )
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -511,7 +447,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks[:2]:
             assert_that(
@@ -519,11 +455,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            # TODO: The complete filter is currently passed to
-                            # each attribute, because the DatabaseItem cannot
-                            # interpret the filter for now
                             self.item_mapper.select_request.return_value,
-                            item_filter,
                         )
                     )
                 ),
@@ -563,18 +495,8 @@ class TestDatabaseItemSelect(unittest.TestCase):
         # Connection used for the base request
         database_item.connection = self.connection
 
-        item_filter = SFilter(
-            "$",
-            Operator.AND,
-            [
-                SFilter("nested.data[0][0]", Operator.EQ, 13),
-                SFilter("nested.data[0][1]", Operator.EQ, 12),
-                SFilter("nested.data[1]", Operator.REG, r"\S*"),
-                SFilter("nested.time", Operator.LT, 2027),
-            ],
-        )
-
-        select_requests = database_item.select_request(item_filter)
+        compiled_filter = MagicMock()
+        select_requests = database_item.select_request(compiled_filter)
 
         # As a side effect, the connection must have been set up on all requests
         # returned in select_requests
@@ -584,7 +506,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
 
         assert_that(
             self.item_mapper.select_request.call_args_list,
-            contains_exactly(has_properties(args=contains_exactly(item_filter))),
+            contains_exactly(has_properties(args=contains_exactly(compiled_filter))),
         )
         for attribute in self.attribute_mocks[:4]:
             assert_that(
@@ -592,7 +514,7 @@ class TestDatabaseItemSelect(unittest.TestCase):
                 contains_exactly(
                     has_properties(
                         args=contains_exactly(
-                            self.item_mapper.select_request.return_value, item_filter
+                            self.item_mapper.select_request.return_value
                         )
                     )
                 ),

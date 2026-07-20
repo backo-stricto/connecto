@@ -26,6 +26,8 @@ A path does not need to reach a leaf in the structure, so `[2, "nested"]` is a
 valid path to `"data": ["bip", "boop", Item(2)]`.
 """
 
+import re
+
 
 class PathError(Exception):
     """Error raised if a path could not be processed."""
@@ -34,6 +36,7 @@ class PathError(Exception):
         """Initializes the standard exception with an excplicit message."""
         super().__init__(f"Path {path} could not be resolved in {data}.")
 
+
 def equal_path(data_path_1, data_path_2):
     if len(data_path_1) != len(data_path_2):
         return False
@@ -41,6 +44,7 @@ def equal_path(data_path_1, data_path_2):
         if p1 != p2:
             return False
     return True
+
 
 def find(data, path):
     """Returns the item at path in data.
@@ -173,3 +177,27 @@ def delete(data, path):
             raise PathError(data, path)
     else:
         del data
+
+
+def _from_json_path(nested_data_path, jsonpath):
+    match_key = re.match(r"^\.?([^\[\.]+)(.*)$", jsonpath)
+    if match_key:
+        nested_data_path.append(match_key.group(1))
+        _from_json_path(nested_data_path, match_key.group(2))
+    else:
+        match_index = re.match(r"^\[([^\[]+)\](.*)$", jsonpath)
+        if match_index:
+            nested_data_path.append(int(match_index.group(1)))
+            _from_json_path(nested_data_path, match_index.group(2))
+        #  elif len(jsonpath) > 0:
+        #  # Single attribute, no . or [] operator left
+        #  nested_data_path.append(jsonpath)
+
+
+def from_jsonpath(jsonpath):
+    path = jsonpath.removeprefix("$").removeprefix("@")
+    nested_data_path = []
+
+    _from_json_path(nested_data_path, path)
+
+    return nested_data_path
